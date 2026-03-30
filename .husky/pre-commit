@@ -1,0 +1,5 @@
+echo "🔍 Running pre-commit checks..."
+npm run precommit:check
+
+echo "🔍 Running TypeScript type check..."
+npx tsc --noEmit

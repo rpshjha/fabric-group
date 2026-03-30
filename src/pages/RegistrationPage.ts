@@ -1,0 +1,107 @@
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
+import { UI_ROUTES } from '@constants/endpoints';
+
+export class RegistrationPage extends BasePage {
+  private readonly firstNameInput: Locator;
+  private readonly lastNameInput: Locator;
+  private readonly addressInput: Locator;
+  private readonly cityInput: Locator;
+  private readonly stateInput: Locator;
+  private readonly zipCodeInput: Locator;
+  private readonly phoneInput: Locator;
+  private readonly ssnInput: Locator;
+  private readonly usernameInput: Locator;
+  private readonly passwordInput: Locator;
+  private readonly confirmPasswordInput: Locator;
+  private readonly registerButton: Locator;
+  private readonly successMessage: Locator;
+  private readonly successDetail: Locator;
+  private readonly errorMessage: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.firstNameInput = page.locator('input[name="customer.firstName"]');
+    this.lastNameInput = page.locator('input[name="customer.lastName"]');
+    this.addressInput = page.locator('input[name="customer.address.street"]');
+    this.cityInput = page.locator('input[name="customer.address.city"]');
+    this.stateInput = page.locator('input[name="customer.address.state"]');
+    this.zipCodeInput = page.locator('input[name="customer.address.zipCode"]');
+    this.phoneInput = page.locator('input[name="customer.phoneNumber"]');
+    this.ssnInput = page.locator('input[name="customer.ssn"]');
+    this.usernameInput = page.locator('input[name="customer.username"]');
+    this.passwordInput = page.locator('input[name="customer.password"]');
+    this.confirmPasswordInput = page.locator('input[name="repeatedPassword"]');
+    this.registerButton = page.locator('input[value="Register"]');
+    this.successMessage = page.locator('.title');
+    this.successDetail = page.locator('#rightPanel > p');
+    this.errorMessage = page.locator('span.error');
+  }
+
+  public async navigateToRegistrationPage(): Promise<void> {
+    await this.navigateToPath(UI_ROUTES.REGISTER);
+  }
+
+  public async registerUser(userData: {
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    phone: string;
+    ssn: string;
+    username: string;
+    password: string;
+  }): Promise<void> {
+    await this.typeText(this.firstNameInput, userData.firstName);
+    await this.typeText(this.lastNameInput, userData.lastName);
+    await this.typeText(this.addressInput, userData.address);
+    await this.typeText(this.cityInput, userData.city);
+    await this.typeText(this.stateInput, userData.state);
+    await this.typeText(this.zipCodeInput, userData.zipCode);
+    await this.typeText(this.phoneInput, userData.phone);
+    await this.typeText(this.ssnInput, userData.ssn);
+    await this.typeText(this.usernameInput, userData.username);
+    await this.typeText(this.passwordInput, userData.password);
+    await this.typeText(this.confirmPasswordInput, userData.password);
+    await this.registerButton.click();
+
+    await Promise.race([
+      this.successMessage.waitFor({ state: 'visible' }),
+      this.errorMessage.first().waitFor({ state: 'visible' }),
+    ]);
+  }
+
+  public async getSuccessMessage(): Promise<string> {
+    const text = await this.successMessage.textContent();
+    return text ?? '';
+  }
+
+  public async getSuccessDetail(): Promise<string> {
+    const text = await this.successDetail.textContent();
+    return text ?? '';
+  }
+
+  public async getErrorMessage(): Promise<string> {
+    const text = await this.errorMessage.textContent();
+    return text ?? '';
+  }
+
+  public async isRegistrationPageDisplayed(): Promise<boolean> {
+    return this.registerButton.isVisible();
+  }
+
+  public async getErrorCount(): Promise<number> {
+    return await this.errorMessage.count();
+  }
+
+  public async hasErrors(): Promise<boolean> {
+    return (await this.getErrorCount()) > 0;
+  }
+
+  public async getAllErrors(): Promise<string[]> {
+    const errors = await this.errorMessage.allTextContents();
+    return errors.map((e) => e.trim()).filter(Boolean);
+  }
+}

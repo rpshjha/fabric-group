@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0
+  },
+  "failedTests": [
+    {
+      "title": "Complete banking journey - User opens account, transfers funds, and pays bills",
+      "fullTitle": " › chromium › ui/e2e-banking-journey.spec.ts › Complete banking journey - User opens account, transfers funds, and pays bills",
+      "error": "Error: Registration failed with errors: This username already exists.\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m0\u001b[39m\nReceived length: \u001b[31m1\u001b[39m\nReceived array:  \u001b[31m[\"This username already exists.\"]\u001b[39m",
+      "screenshots": [
+        "/Users/rupeshkumar/workspace/fabric-group/test-output/artifacts/ui-e2e-banking-journey-Com-58b3d-nsfers-funds-and-pays-bills-chromium/test-failed-1.png"
+      ],
+      "videos": [
+        "/Users/rupeshkumar/workspace/fabric-group/test-output/artifacts/ui-e2e-banking-journey-Com-58b3d-nsfers-funds-and-pays-bills-chromium/video.webm"
+      ],
+      "duration": 17273,
+      "retries": 0,
+      "browser": "project"
+    }
+  ],
+  "executionTime": 18536
+}

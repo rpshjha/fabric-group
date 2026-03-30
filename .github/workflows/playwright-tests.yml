@@ -1,0 +1,319 @@
+name: Playwright E2E Tests CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '30 2 * * *' # 8:00 AM IST (UTC+5:30)
+  workflow_dispatch:
+
+env:
+  BASE_URL: https://parabank.parasoft.com
+  HEADLESS: 'true'
+  TIMEOUT: '30000'
+  EXPECT_TIMEOUT: '5000'
+  CI: 'true'
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Type checking
+        run: npm run type-check
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run Playwright tests - ${{ matrix.browser }}
+        run: npx playwright test --project=${{ matrix.browser }}
+        continue-on-error: true
+        env:
+          SEND_EMAIL_REPORT: false
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-${{ matrix.browser }}
+          path: test-output/report/
+          retention-days: 30
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ matrix.browser }}
+          path: |
+            test-output/artifacts/
+            test-output/results/
+          retention-days: 30
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-output/results/junit.xml
+          check_name: Test Results - ${{ matrix.browser }}
+          comment_mode: always
+          compare_to_earlier_commit: true
+
+  test-summary:
+    name: Test Summary & Email Report
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Parse test results
+        id: parse_results
+        run: |
+          # Parse results from all browsers
+          TOTAL_TESTS=0
+          TOTAL_PASSED=0
+          TOTAL_FAILED=0
+          TOTAL_SKIPPED=0          TOTAL_RETRIES=0
+          FLAKY_TESTS=0
+
+          for results_file in test-artifacts/test-artifacts-*/results/results.json; do
+            if [ -f "$results_file" ]; then
+              TESTS=$(jq '[.suites[].tests[]] | length' "$results_file" 2>/dev/null || echo "0")
+              PASSED=$(jq '[.suites[].tests[] | select(.results[-1].status=="passed")] | length' "$results_file" 2>/dev/null || echo "0")
+              FAILED=$(jq '[.suites[].tests[] | select(.results[-1].status=="failed")] | length' "$results_file" 2>/dev/null || echo "0")
+              SKIPPED=$(jq '[.suites[].tests[] | select(.results[-1].status=="skipped")] | length' "$results_file" 2>/dev/null || echo "0")
+              RETRIES=$(jq '[.suites[].tests[] | (.results | length - 1)] | add' "$results_file" 2>/dev/null || echo "0")
+              FLAKY=$(jq '[.suites[].tests[] | select((.results | length > 1) and (.results[-1].status == "passed"))] | length' "$results_file" 2>/dev/null || echo "0")
+              
+              TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
+              TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
+              TOTAL_FAILED=$((TOTAL_FAILED + FAILED))
+              TOTAL_SKIPPED=$((TOTAL_SKIPPED + SKIPPED))
+              TOTAL_RETRIES=$((TOTAL_RETRIES + RETRIES))
+              FLAKY_TESTS=$((FLAKY_TESTS + FLAKY))
+            fi
+          done
+
+          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          echo "passed=$TOTAL_PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$TOTAL_FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$TOTAL_SKIPPED" >> $GITHUB_OUTPUT
+          echo "retries=$TOTAL_RETRIES" >> $GITHUB_OUTPUT
+          echo "flaky=$FLAKY_TESTS" >> $GITHUB_OUTPUT
+          echo "pass_rate=$((TOTAL_PASSED * 100 / (TOTAL_TESTS > 0 ? TOTAL_TESTS : 1)))" >> $GITHUB_OUTPUT
+
+      - name: Generate comprehensive summary
+        run: |
+          TOTAL_TESTS=${{ steps.parse_results.outputs.total_tests }}
+          PASSED=${{ steps.parse_results.outputs.passed }}
+          FAILED=${{ steps.parse_results.outputs.failed }}
+          SKIPPED=${{ steps.parse_results.outputs.skipped }}
+          RETRIES=${{ steps.parse_results.outputs.retries }}
+          FLAKY=${{ steps.parse_results.outputs.flaky }}
+          PASS_RATE=${{ steps.parse_results.outputs.pass_rate }}
+
+          echo "# 🧪 Playwright Test Execution Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Execution Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: [\`${{ github.repository }}\`](${{ github.server_url }}/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: [\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total Tests** | $TOTAL_TESTS |" >> $GITHUB_STEP_SUMMARY
+          echo "| **✅ Passed** | $PASSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **❌ Failed** | $FAILED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **⏭️ Skipped** | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Retries** | $RETRIES |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Flaky Tests** | $FLAKY |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Pass Rate** | $PASS_RATE% |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "| Browser | HTML Report | Screenshots | Results |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------------|-------------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Chromium | [View](artifacts/html-report-chromium/) | [View](artifacts/test-artifacts-chromium/artifacts/screenshots/) | [Download](artifacts/test-artifacts-chromium/results/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firefox | [View](artifacts/html-report-firefox/) | [View](artifacts/test-artifacts-firefox/artifacts/screenshots/) | [Download](artifacts/test-artifacts-firefox/results/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| WebKit | [View](artifacts/html-report-webkit/) | [View](artifacts/test-artifacts-webkit/artifacts/screenshots/) | [Download](artifacts/test-artifacts-webkit/results/) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send test report email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: |
+            Playwright Tests Report - ${{ steps.parse_results.outputs.passed }}/${{ steps.parse_results.outputs.total_tests }} passed
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.SMTP_USER }}
+          priority: high
+          body: |
+            # 🧪 Playwright Test Execution Report
+
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            **Run ID:** ${{ github.run_id }}
+            **Triggered by:** ${{ github.event_name }}
+            **Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+            ---
+
+            ## 📊 Test Results Summary
+
+            | Metric | Count |
+            |--------|-------|
+            | **Total Tests Executed** | ${{ steps.parse_results.outputs.total_tests }} |
+            | **✅ Passed** | ${{ steps.parse_results.outputs.passed }} |
+            | **❌ Failed** | ${{ steps.parse_results.outputs.failed }} |
+            | **⏭️ Skipped** | ${{ steps.parse_results.outputs.skipped }} |
+            | **Retries** | ${{ steps.parse_results.outputs.retries }} |
+            | **Flaky Tests** | ${{ steps.parse_results.outputs.flaky }} |
+            | **Pass Rate** | ${{ steps.parse_results.outputs.pass_rate }}% |
+
+            ---
+
+            ## 📋 Test Execution Details
+
+            - **Repository Link**: https://github.com/${{ github.repository }}
+            - **Commit Link**: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            - **Actions Run**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ---
+
+            ## 📸 Artifacts & Reports
+
+            ### HTML Reports by Browser:
+            - **Chromium**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Firefox**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **WebKit**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ### Screenshots & Logs:
+            Check the artifacts section in the GitHub Actions run for:
+            - Failure screenshots
+            - Video recordings (on-failure)
+            - Execution logs
+            - Test results JSON
+
+            **Link to Full Report**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ---
+
+            ## ✨ Status
+
+            **Overall Result**: ${{ steps.parse_results.outputs.failed > 0 && '❌ FAILED' || '✅ PASSED' }}
+
+            ---
+
+            *This is an automated email from the Playwright test CI/CD pipeline.*
+            *Do not reply to this email.*
+
+      - name: Send failure notification on critical failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        continue-on-error: true
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: '🚨 CRITICAL: Playwright Tests CI/CD Pipeline Failed'
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.SMTP_USER }}
+          priority: urgent
+          body: |
+            # 🚨 CRITICAL ALERT
+
+            The Playwright test CI/CD pipeline encountered a critical failure.
+
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Run ID:** ${{ github.run_id }}
+
+            **Check the full logs here:**
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Please investigate immediately.
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for secrets
+        run: npm run security:secrets
+        continue-on-error: true
+
+      - name: Lint all files
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run type-check
