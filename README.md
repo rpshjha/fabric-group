@@ -26,13 +26,13 @@ Application URL: https://parabank.parasoft.com/
 
 Before setting up the project, ensure the following tools are installed:
 
-- **Node.js** (v18 or higher recommended)  
-- **npm** (comes with Node.js)  
-- **Git** (for cloning the repository)  
+- **Node.js** (v18 or higher recommended)
+- **npm** (comes with Node.js)
+- **Git** (for cloning the repository)
 
 ### Optional (Recommended)
 
-- **VS Code** or any IDE with TypeScript support   
+- **VS Code** or any IDE with TypeScript support
 
 ---
 

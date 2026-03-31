@@ -1,5 +1,9 @@
 name: Playwright E2E Tests CI/CD
 
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
