@@ -1,10 +1,10 @@
 export interface Transaction {
-  id: string;
-  date: string;
+  id: number;
+  date: number;
   amount: number;
   type: string;
   description: string;
-  accountId: string;
+  accountId: number;
 }
 
 export type TransactionList = Transaction[];

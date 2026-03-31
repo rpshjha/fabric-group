@@ -22,6 +22,7 @@ export interface TestContextData {
     lastTransferAmount?: number;
     lastBillAmount?: number;
     transactions?: any[];
+    transactionId?: number;
   };
 }
 
@@ -77,6 +78,15 @@ export class TestContext {
 
   getTransactions(): any[] | undefined {
     return this.data.transactions?.transactions;
+  }
+
+  setTransactionId(transactionId: number): void {
+    if (!this.data.transactions) this.data.transactions = {};
+    this.data.transactions.transactionId = transactionId;
+  }
+
+  getTransactionId(): number | undefined {
+    return this.data.transactions?.transactionId;
   }
 
   getAllData(): TestContextData {

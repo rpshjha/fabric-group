@@ -60,8 +60,6 @@ npm run prepare
 
 ```bash
 npm run test
-npm run test:e2e
-npm run test:api
 npx playwright test --headed
 npx playwright test --debug
 ```

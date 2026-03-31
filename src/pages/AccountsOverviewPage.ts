@@ -57,4 +57,8 @@ export class AccountsOverviewPage extends BasePage {
   public async isOverviewPageDisplayed(): Promise<boolean> {
     return this.accountsTable.isVisible();
   }
+
+  public async clickOnAccount(accountId: string): Promise<void> {
+    await this.page.getByRole('link', { name: accountId }).click();
+  }
 }

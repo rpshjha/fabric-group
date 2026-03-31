@@ -26,6 +26,13 @@ env:
   TIMEOUT: '60000'
   EXPECT_TIMEOUT: '5000'
   CI: 'true'
+  SMTP_HOST: ${{ secrets.SMTP_HOST }}
+  SMTP_PORT: ${{ secrets.SMTP_PORT }}
+  SMTP_USER: ${{ secrets.SMTP_USER }}
+  SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+  EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+  EMAIL_TO: ${{ secrets.EMAIL_TO }}
+  SEND_EMAIL_REPORT: true
 
 jobs:
   test:
@@ -59,17 +66,15 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps ${{ env.BROWSER }}
 
-      - name: Run Playwright tests - chromium
+      - name: Run Playwright tests - ${{ env.BROWSER }}
         run: npx playwright test --project=${{ env.BROWSER }}
         continue-on-error: true
-        env:
-          SEND_EMAIL_REPORT: true
 
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          nname: html-report-${{ env.BROWSER }}
+          name: html-report-${{ env.BROWSER }}
           path: test-output/report/
           retention-days: 30
 
