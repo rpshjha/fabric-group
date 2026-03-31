@@ -183,10 +183,14 @@ jobs:
           priority: high
 
           attachments: |
-            test-artifacts/**/*
-            test-artifacts/**/artifacts/**/*
-            test-artifacts/**/results/**/*
-            test-artifacts/**/report/**/*
+            test-artifacts/**/*.json
+            test-artifacts/**/*.xml
+            test-artifacts/**/*.html
+            test-artifacts/**/*.png
+            test-artifacts/**/*.mp4
+            test-artifacts/**/*.zip
+            test-artifacts/**/*.webm
+            test-artifacts/**/*.trace
 
           body: |
             PLAYWRIGHT TEST EXECUTION REPORT
