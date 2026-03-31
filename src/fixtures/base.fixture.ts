@@ -16,7 +16,8 @@ export const test = base.extend<{
   authenticatedPage: Page;
   apiContext: APIRequestContext;
 }>({
-  testContext: async (_: unknown, use): Promise<void> => {
+  // eslint-disable-next-line no-empty-pattern
+  testContext: async ({}, use): Promise<void> => {
     const testContext = new TestContext();
 
     await use(testContext);
