@@ -47,6 +47,9 @@ git --version
 ## Setup
 
 ```bash
+git clone https://github.com/rpshjha/fabric-group.git
+cd fabric-group
+
 npm install
 npx playwright install
 npm run prepare
