@@ -13,13 +13,13 @@ export class TransferFundsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.amountInput = page.locator('input[name="amount"]');
-    this.fromAccountSelect = page.locator('select[name="fromAccountId"]');
-    this.toAccountSelect = page.locator('select[name="toAccountId"]');
-    this.transferButton = page.getByRole('button', { name: /transfer/i });
+    this.amountInput = page.locator('input#amount');
+    this.fromAccountSelect = page.locator('select#fromAccountId');
+    this.toAccountSelect = page.locator('select#toAccountId');
+    this.transferButton = page.locator("input[value='Transfer']");
     this.successMessage = page.locator('.title');
     this.errorMessage = page.locator('.error');
-    this.confirmationMessage = page.locator('#transactionSuccessful, .message');
+    this.confirmationMessage = page.locator('#showResult');
   }
 
   public async navigateToTransfer(): Promise<void> {
@@ -43,6 +43,8 @@ export class TransferFundsPage extends BasePage {
   }
 
   public async getConfirmationMessage(): Promise<string> {
+    await this.confirmationMessage.waitFor({ state: 'visible' }); // ✅ wait for result
+
     const text = await this.confirmationMessage.textContent();
     return text ?? '';
   }

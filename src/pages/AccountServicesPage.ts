@@ -1,5 +1,9 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
+import { OpenNewAccountPage } from './OpenNewAccountPage';
+import { AccountsOverviewPage } from './AccountsOverviewPage';
+import { TransferFundsPage } from './TransferFundsPage';
+import { BillPayPage } from './BillPayPage';
 
 export class AccountServicesPage extends BasePage {
   private readonly menu: Locator;
@@ -14,6 +18,7 @@ export class AccountServicesPage extends BasePage {
   private readonly homeLink: Locator;
   private readonly aboutUsLink: Locator;
   private readonly contactLink: Locator;
+  private readonly welcomeMessage: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -29,41 +34,46 @@ export class AccountServicesPage extends BasePage {
     this.homeLink = page.locator('ul.button li.home a');
     this.aboutUsLink = page.locator('ul.button li.aboutus a');
     this.contactLink = page.locator('ul.button li.contact a');
+    this.welcomeMessage = page.locator('p.smallText');
   }
 
   public async isMenuVisible(): Promise<boolean> {
     return this.menu.isVisible();
   }
 
-  public async openAccount(): Promise<void> {
+  public async goToOpenNewAccount(): Promise<OpenNewAccountPage> {
     await this.openAccountLink.click();
+    return new OpenNewAccountPage(this.page);
   }
 
-  public async goToOverview(): Promise<void> {
+  public async goToAccountsOverview(): Promise<AccountsOverviewPage> {
     await this.overviewLink.click();
+    return new AccountsOverviewPage(this.page);
   }
 
-  public async goToTransfer(): Promise<void> {
+  public async goToTransferFunds(): Promise<TransferFundsPage> {
     await this.transferLink.click();
+    return new TransferFundsPage(this.page);
   }
 
-  public async goToBillPay(): Promise<void> {
+  public async goToBillPay(): Promise<BillPayPage> {
     await this.billPayLink.click();
+    return new BillPayPage(this.page);
   }
 
-  public async findTransactions(): Promise<void> {
+  public async goTofindTransactions(): Promise<void> {
     await this.findTransactionsLink.click();
   }
 
-  public async updateContactInfo(): Promise<void> {
+  public async goToUpdateContactInfo(): Promise<void> {
     await this.updateProfileLink.click();
   }
 
-  public async requestLoan(): Promise<void> {
+  public async goToRequestLoan(): Promise<void> {
     await this.requestLoanLink.click();
   }
 
-  public async logout(): Promise<void> {
+  public async logoutUser(): Promise<void> {
     await this.logoutLink.click();
   }
 
@@ -81,5 +91,9 @@ export class AccountServicesPage extends BasePage {
 
   public async isAccountServicesSectionVisible(): Promise<boolean> {
     return this.menu.locator('h2', { hasText: 'Account Services' }).isVisible();
+  }
+
+  public async getWelcomeMessage(): Promise<string> {
+    return (await this.welcomeMessage.textContent()) ?? '';
   }
 }

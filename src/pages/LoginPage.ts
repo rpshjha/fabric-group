@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 import { UI_ROUTES } from '@constants/endpoints';
+import { AccountsOverviewPage } from './AccountsOverviewPage';
 
 export class LoginPage extends BasePage {
   private readonly usernameInput: Locator;
@@ -22,10 +23,11 @@ export class LoginPage extends BasePage {
     await this.navigateToPath(UI_ROUTES.LOGIN);
   }
 
-  public async login(username: string, password: string): Promise<void> {
+  public async login(username: string, password: string): Promise<AccountsOverviewPage> {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
     await this.loginButton.click();
+    return new AccountsOverviewPage(this.page);
   }
 
   public async getErrorMessage(): Promise<string> {

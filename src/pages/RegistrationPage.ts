@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 import { UI_ROUTES } from '@constants/endpoints';
+import { AccountServicesPage } from './AccountServicesPage';
 
 export class RegistrationPage extends BasePage {
   private readonly firstNameInput: Locator;
@@ -53,24 +54,27 @@ export class RegistrationPage extends BasePage {
     ssn: string;
     username: string;
     password: string;
-  }): Promise<void> {
-    await this.typeText(this.firstNameInput, userData.firstName);
-    await this.typeText(this.lastNameInput, userData.lastName);
-    await this.typeText(this.addressInput, userData.address);
-    await this.typeText(this.cityInput, userData.city);
-    await this.typeText(this.stateInput, userData.state);
-    await this.typeText(this.zipCodeInput, userData.zipCode);
-    await this.typeText(this.phoneInput, userData.phone);
-    await this.typeText(this.ssnInput, userData.ssn);
-    await this.typeText(this.usernameInput, userData.username);
-    await this.typeText(this.passwordInput, userData.password);
-    await this.typeText(this.confirmPasswordInput, userData.password);
+  }): Promise<AccountServicesPage> {
+    await this.firstNameInput.fill(userData.firstName);
+    await this.lastNameInput.fill(userData.lastName);
+    await this.addressInput.fill(userData.address);
+    await this.cityInput.fill(userData.city);
+    await this.stateInput.fill(userData.state);
+    await this.zipCodeInput.fill(userData.zipCode);
+    await this.phoneInput.fill(userData.phone);
+    await this.ssnInput.fill(userData.ssn);
+    await this.usernameInput.fill(userData.username);
+    await this.passwordInput.fill(userData.password);
+    await this.confirmPasswordInput.fill(userData.password);
+
     await this.registerButton.click();
 
     await Promise.race([
       this.successMessage.waitFor({ state: 'visible' }),
       this.errorMessage.first().waitFor({ state: 'visible' }),
     ]);
+
+    return new AccountServicesPage(this.page);
   }
 
   public async getSuccessMessage(): Promise<string> {

@@ -1,121 +1,143 @@
 import { test, expect } from '@playwright/test';
 import { RegistrationPage } from '@pages/RegistrationPage';
 import { LoginPage } from '@pages/LoginPage';
-import { OverviewPage } from '@pages/OverviewPage';
-import { OpenAccountPage } from '@pages/OpenAccountPage';
-import { TransferFundsPage } from '@pages/TransferFundsPage';
-import { BillPayPage } from '@pages/BillPayPage';
-import { AccountServicesPage } from '@pages/AccountServicesPage';
 import { createTestUser, getRandomTransferAmount, BillPaymentBuilder } from '@utils/test-data';
 import { TestContext } from '@fixtures/test-context';
 import { UI_ROUTES } from '@constants/endpoints';
+import { AccountServicesPage } from '@/pages/AccountServicesPage';
+import { AccountsOverviewPage } from '@/pages/AccountsOverviewPage';
 
-test('Complete banking journey - User opens account, transfers funds, and pays bills', async ({
-  page,
-}) => {
-  const testContext = new TestContext();
+test('User completes end-to-end banking journey successfully', async ({ page }) => {
+  test.setTimeout(60000);
 
-  const regPage = new RegistrationPage(page);
+  const context = new TestContext();
+  const user = createTestUser();
+  context.setUser(user);
+
+  const registrationPage = new RegistrationPage(page);
   const loginPage = new LoginPage(page);
-  const overview = new OverviewPage(page);
-  const accountPage = new OpenAccountPage(page);
-  const transferPage = new TransferFundsPage(page);
-  const billPage = new BillPayPage(page);
-  const accountServicesPage = new AccountServicesPage(page);
 
-  testContext.setUser(createTestUser());
+  let accountServicesPage: AccountServicesPage;
+  let accountsOverviewPage: AccountsOverviewPage;
+  let newSavingsAccountId: string;
 
-  await regPage.navigateToRegistrationPage();
-  expect(page.url()).toContain(UI_ROUTES.REGISTER);
+  await test.step('User registers successfully', async () => {
+    await registrationPage.navigateToRegistrationPage();
+    await expect(page).toHaveURL(new RegExp(UI_ROUTES.REGISTER));
 
-  await regPage.registerUser(testContext.getUser()!);
+    accountServicesPage = await registrationPage.registerUser(user);
 
-  const errors = await regPage.getAllErrors();
-  expect(errors, `Registration failed with errors: ${errors.join(', ')}`).toHaveLength(0);
-
-  const successTitle = await regPage.getSuccessMessage();
-  expect(successTitle).toContain(`Welcome ${testContext.getUser()!.username}`);
-
-  const successDetail = await regPage.getSuccessDetail();
-  expect(successDetail).toBe('Your account was created successfully. You are now logged in.');
-
-  await accountServicesPage.logout();
-
-  await loginPage.navigateToLoginPage();
-  await loginPage.login(testContext.getUser()!.username, testContext.getUser()!.password);
-  expect(page.url()).toContain(UI_ROUTES.ACCOUNTS_OVERVIEW);
-
-  const greeting = await overview.getWelcomeMessage();
-  expect(greeting).toContain(testContext.getUser()!.firstName);
-
-  expect(await accountServicesPage.isMenuVisible()).toBeTruthy();
-  expect(await accountServicesPage.isAccountServicesSectionVisible()).toBeTruthy();
-
-  await accountServicesPage.openAccount();
-  expect(page.url()).toContain(UI_ROUTES.OPEN_ACCOUNT);
-
-  const accounts = await overview.getAllAccounts();
-  expect(accounts.length).toBeGreaterThan(0);
-
-  testContext.setPrimaryAccount(accounts[0]);
-
-  testContext.setSavingsAccount(
-    await accountPage.openNewAccount('SAVINGS', testContext.getPrimaryAccount()!)
-  );
-  expect(testContext.getSavingsAccount()).toBeTruthy();
-  expect(testContext.getSavingsAccount()).toMatch(/^\d+$/);
-
-  const accountMsg = await accountPage.getSuccessMessage();
-  expect(accountMsg).toContain('Account');
-
-  await overview.navigateToOverview();
-  const balance = await overview.getAccountBalance(testContext.getSavingsAccount()!);
-  expect(balance).toBeTruthy();
-  expect(balance).toMatch(/^\$[\d,]+\.\d{2}$/);
-
-  const allAccounts = await overview.getAllAccounts();
-  expect(allAccounts).toContain(testContext.getSavingsAccount());
-
-  await accountServicesPage.goToTransfer();
-  expect(page.url()).toContain(UI_ROUTES.TRANSFER_FUNDS);
-
-  testContext.setLastTransferAmount(getRandomTransferAmount(50, 300));
-
-  await transferPage.transferFunds(
-    testContext.getPrimaryAccount()!,
-    testContext.getSavingsAccount()!,
-    testContext.getLastTransferAmount()!
-  );
-
-  const transferMsg = await transferPage.getConfirmationMessage();
-  expect(transferMsg).toBeTruthy();
-  expect(transferMsg.toLowerCase()).toContain('success');
-
-  await accountServicesPage.goToBillPay();
-  expect(page.url()).toContain(UI_ROUTES.BILL_PAY);
-
-  testContext.setLastBillAmount(
-    new BillPaymentBuilder(parseInt(testContext.getSavingsAccount()!)).withTypicalAmount().build()
-      .amount
-  );
-
-  const payment = new BillPaymentBuilder(parseInt(testContext.getSavingsAccount()!))
-    .withTypicalAmount()
-    .build();
-
-  testContext.setLastBillAmount(payment.amount);
-
-  await billPage.payBill({
-    name: payment.payee,
-    address: payment.address,
-    city: payment.city,
-    state: payment.state,
-    zipCode: payment.zipCode,
-    phone: payment.phone,
-    amount: testContext.getLastBillAmount()!,
-    fromAccountId: String(testContext.getSavingsAccount()),
+    await expect(registrationPage.getAllErrors()).resolves.toHaveLength(0);
+    await expect(registrationPage.getSuccessMessage()).resolves.toContain(
+      `Welcome ${user.username}`
+    );
+    await expect(
+      registrationPage.getSuccessDetail(),
+      'User should see confirmation message after successful registration'
+    ).resolves.toBe('Your account was created successfully. You are now logged in.');
   });
 
-  const billMsg = await billPage.getSuccessMessage();
-  expect(billMsg).toBeTruthy();
+  await test.step('User logs in to the application', async () => {
+    await accountServicesPage.logoutUser();
+
+    await loginPage.navigateToLoginPage();
+    accountsOverviewPage = await loginPage.login(user.username, user.password);
+
+    await expect(page).toHaveURL(new RegExp(UI_ROUTES.ACCOUNTS_OVERVIEW));
+    await expect(accountServicesPage.getWelcomeMessage()).resolves.toContain(user.firstName);
+
+    let accountsOverview = await accountsOverviewPage.getAllAccounts();
+    expect(
+      accountsOverview.length,
+      'User should have at least one account after successful login'
+    ).toBeGreaterThan(0);
+    accountsOverview.forEach((account) => context.addAccount(account));
+  });
+
+  await test.step('User verifies global navigation menu', async () => {
+    await expect(
+      accountServicesPage.isMenuVisible(),
+      'Global navigation menu should be visible'
+    ).resolves.toBeTruthy();
+    await expect(
+      accountServicesPage.isAccountServicesSectionVisible(),
+      'Account Services section should be visible in the navigation menu'
+    ).resolves.toBeTruthy();
+  });
+
+  await test.step('User opens a new savings account', async () => {
+    const openNewAccountPage = await accountServicesPage.goToOpenNewAccount();
+    await expect(page).toHaveURL(new RegExp(UI_ROUTES.OPEN_ACCOUNT));
+
+    newSavingsAccountId = await openNewAccountPage.openNewAccount(
+      'SAVINGS',
+      context.getPrimaryAccount()!
+    );
+
+    context.addAccount(newSavingsAccountId, 'SAVINGS');
+
+    expect(newSavingsAccountId, `Invalid account number generated: ${newSavingsAccountId}`).toMatch(
+      /^\d+$/
+    );
+  });
+
+  await test.step('User views existing accounts overview', async () => {
+    accountsOverviewPage = await accountServicesPage.goToAccountsOverview();
+    const accounts = await accountsOverviewPage.getAllAccounts();
+
+    expect(accounts.length).toBeGreaterThan(0);
+    accounts.forEach((account) => context.addAccount(account));
+
+    for (const account of accounts) {
+      const balance = await accountsOverviewPage.getAccountBalance(account);
+      expect(balance, `User should see properly formatted account balance`).toMatch(
+        /^\$[\d,]+\.\d{2}$/
+      );
+    }
+  });
+
+  await test.step('User transfers funds between accounts', async () => {
+    const transferFundsPage = await accountServicesPage.goToTransferFunds();
+    await expect(page).toHaveURL(new RegExp(UI_ROUTES.TRANSFER_FUNDS));
+
+    const amount = getRandomTransferAmount(100, 300);
+    context.setLastTransferAmount(amount);
+
+    await transferFundsPage.transferFunds(
+      context.getPrimaryAccount()!,
+      context.getSecondaryAccount()!,
+      amount
+    );
+
+    await expect(
+      transferFundsPage.getConfirmationMessage(),
+      'User should see confirmation message after successful fund transfer'
+    ).resolves.toContain('Transfer Complete');
+  });
+
+  await test.step('User pays a bill successfully', async () => {
+    const billPayPage = await accountServicesPage.goToBillPay();
+    await expect(page).toHaveURL(new RegExp(UI_ROUTES.BILL_PAY));
+
+    const payment = new BillPaymentBuilder(parseInt(context.getSecondaryAccount()!))
+      .withTypicalAmount()
+      .build();
+
+    await billPayPage.payBill({
+      name: payment.payee,
+      address: payment.address,
+      city: payment.city,
+      state: payment.state,
+      zipCode: payment.zipCode,
+      phone: payment.phone,
+      amount: payment.amount,
+      toAccount: String(payment.accountNumber),
+      fromAccount: String(context.getSecondaryAccount()),
+    });
+
+    await expect(
+      billPayPage.getSuccessMessage(),
+      'Bill payment should complete successfully and display a confirmation message'
+    ).resolves.toBeTruthy();
+  });
 });

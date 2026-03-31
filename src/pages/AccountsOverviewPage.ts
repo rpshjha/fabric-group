@@ -1,18 +1,16 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
-import { UI_ROUTES } from '@constants/endpoints';
 
-export class OverviewPage extends BasePage {
+export class AccountsOverviewPage extends BasePage {
   private readonly accountsTable: Locator;
   private readonly accountRow: (accountId: string) => Locator;
   private readonly balanceLocator: (accountId: string) => Locator;
   private readonly accountTypeLocator: (accountId: string) => Locator;
-  private readonly logoutButton: Locator;
   private readonly welcomeMessage: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.accountsTable = page.locator('table');
+    this.accountsTable = page.locator('table#accountTable');
     this.accountRow = (accountId: string) =>
       this.page.getByRole('row').filter({ hasText: accountId });
     this.balanceLocator = (accountId: string) =>
@@ -24,12 +22,7 @@ export class OverviewPage extends BasePage {
         .last();
     this.accountTypeLocator = (accountId: string) =>
       this.accountRow(accountId).locator('td').nth(1);
-    this.logoutButton = page.getByRole('link', { name: /logout/i });
-    this.welcomeMessage = page.locator('h2');
-  }
-
-  public async navigateToOverview(): Promise<void> {
-    await this.navigateToPath(UI_ROUTES.ACCOUNTS_OVERVIEW);
+    this.welcomeMessage = page.locator('p.smallText');
   }
 
   public async getAccountBalance(accountId: string): Promise<string> {
@@ -47,27 +40,18 @@ export class OverviewPage extends BasePage {
   }
 
   public async getAllAccounts(): Promise<string[]> {
-    const rowLocators = this.accountsTable.locator('tbody tr');
-    const count = await rowLocators.count();
-    const accounts: string[] = [];
+    const accountLinks = this.accountsTable.locator('tbody tr td:first-child a');
 
-    for (let i = 0; i < count; i++) {
-      const accountId = await rowLocators.nth(i).locator('td').first().textContent();
-      if (accountId) {
-        accounts.push(accountId.trim());
-      }
-    }
+    await accountLinks.first().waitFor({ state: 'visible' });
 
-    return accounts;
+    const accounts = await accountLinks.allTextContents();
+
+    return accounts.map((a) => a.trim());
   }
 
   public async getWelcomeMessage(): Promise<string> {
     const text = await this.welcomeMessage.textContent();
     return text ?? '';
-  }
-
-  public async logout(): Promise<void> {
-    await this.logoutButton.click();
   }
 
   public async isOverviewPageDisplayed(): Promise<boolean> {

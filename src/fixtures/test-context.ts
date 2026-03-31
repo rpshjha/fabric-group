@@ -1,3 +1,9 @@
+export type AccountType = 'SAVINGS' | 'CHECKING';
+
+export type Account = {
+  id: string;
+  type: AccountType;
+};
 export interface TestContextData {
   user?: {
     username: string;
@@ -11,10 +17,7 @@ export interface TestContextData {
     phone: string;
     ssn: string;
   };
-  accounts?: {
-    primary?: string;
-    savings?: string;
-  };
+  accounts?: Account[];
   transactions?: {
     lastTransferAmount?: number;
     lastBillAmount?: number;
@@ -24,7 +27,7 @@ export interface TestContextData {
 
 export class TestContext {
   private data: TestContextData = {
-    accounts: {},
+    accounts: [],
     transactions: {},
   };
 
@@ -36,22 +39,17 @@ export class TestContext {
     return this.data.user;
   }
 
-  setPrimaryAccount(accountNumber: string): void {
-    if (!this.data.accounts) this.data.accounts = {};
-    this.data.accounts.primary = accountNumber;
+  addAccount(accountId: string, type: AccountType = 'SAVINGS'): void {
+    if (!this.data.accounts) this.data.accounts = [];
+    this.data.accounts.push({ id: accountId, type });
   }
 
   getPrimaryAccount(): string | undefined {
-    return this.data.accounts?.primary;
+    return this.data.accounts?.[0]?.id;
   }
 
-  setSavingsAccount(accountNumber: string): void {
-    if (!this.data.accounts) this.data.accounts = {};
-    this.data.accounts.savings = accountNumber;
-  }
-
-  getSavingsAccount(): string | undefined {
-    return this.data.accounts?.savings;
+  getSecondaryAccount(): string | undefined {
+    return this.data.accounts?.[1]?.id;
   }
 
   setLastTransferAmount(amount: number): void {
@@ -86,7 +84,7 @@ export class TestContext {
   }
 
   clear(): void {
-    this.data = { accounts: {}, transactions: {} };
+    this.data = { accounts: [], transactions: {} };
   }
 
   get accountId(): string | undefined {

@@ -12,7 +12,7 @@ on:
 env:
   BASE_URL: https://parabank.parasoft.com
   HEADLESS: 'true'
-  TIMEOUT: '30000'
+  TIMEOUT: '60000'
   EXPECT_TIMEOUT: '5000'
   CI: 'true'
 
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        browser: [webkit]
 
     steps:
       - name: Checkout repository

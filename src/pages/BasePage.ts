@@ -25,10 +25,8 @@ export class BasePage {
     return this.headerLocator.isVisible();
   }
 
-  protected async typeText(locator: Locator, text: string, delay: number = 100): Promise<void> {
+  protected async typeText(locator: Locator, text: string, delay: number = 10): Promise<void> {
     await locator.click();
-    await locator.fill('');
     await locator.pressSequentially(text, { delay });
-    await locator.press('Tab');
   }
 }
