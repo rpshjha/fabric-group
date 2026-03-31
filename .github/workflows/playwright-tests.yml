@@ -173,7 +173,7 @@ jobs:
           subject: |
             🧪 Playwright Report: ${{ steps.parse_results.outputs.passed }}/${{ steps.parse_results.outputs.total_tests }} Passed
 
-          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          to: ${{ env.EMAIL_TO }}
           from: ${{ secrets.SMTP_USER }}
           priority: high
 
