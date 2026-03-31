@@ -118,15 +118,20 @@ jobs:
           cache: 'npm'
 
       - name: Download all test artifacts
+        if: always()
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           path: test-artifacts
 
       - name: Install dependencies
+        continue-on-error: true
         run: npm ci
 
       - name: Parse test results
         id: parse_results
+        if: always()
+        continue-on-error: true
         run: |
           # Parse results from all browsers
           TOTAL_TESTS=0
@@ -171,7 +176,7 @@ jobs:
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: |
-            Playwright Report: ${{ steps.parse_results.outputs.passed }}/${{ steps.parse_results.outputs.total_tests }} Passed
+            Playwright Report: ${{ steps.parse_results.outputs.passed || '0' }}/${{ steps.parse_results.outputs.total_tests || '0' }} Passed
 
           to: ${{ env.EMAIL_TO }}
           from: ${{ secrets.SMTP_USER }}
@@ -189,21 +194,21 @@ jobs:
 
             📊 SUMMARY
             --------------------------------------
-            Total Tests   : ${{ steps.parse_results.outputs.total_tests }}
-            ✅ Passed     : ${{ steps.parse_results.outputs.passed }}
-            ❌ Failed     : ${{ steps.parse_results.outputs.failed }}
-            ⏭️ Skipped    : ${{ steps.parse_results.outputs.skipped }}
+            Total Tests   : ${{ steps.parse_results.outputs.total_tests || 'N/A' }}
+            ✅ Passed     : ${{ steps.parse_results.outputs.passed || 'N/A' }}
+            ❌ Failed     : ${{ steps.parse_results.outputs.failed || 'N/A' }}
+            ⏭️ Skipped    : ${{ steps.parse_results.outputs.skipped || 'N/A' }}
 
-            🔁 Retries    : ${{ steps.parse_results.outputs.retries }}
-            ⚠️ Flaky      : ${{ steps.parse_results.outputs.flaky }}
+            🔁 Retries    : ${{ steps.parse_results.outputs.retries || 'N/A' }}
+            ⚠️ Flaky      : ${{ steps.parse_results.outputs.flaky || 'N/A' }}
 
-            📈 Pass Rate  : ${{ steps.parse_results.outputs.pass_rate }}%
+            📈 Pass Rate  : ${{ steps.parse_results.outputs.pass_rate || 'N/A' }}%
 
             ======================================
 
             🚦 STATUS
             --------------------------------------
-            ${{ steps.parse_results.outputs.failed > 0 && '❌ FAILED' || '✅ PASSED' }}
+            ${{ (steps.parse_results.outputs.failed || '0') > 0 && '❌ FAILED' || '✅ PASSED' }}
 
             ======================================
 
