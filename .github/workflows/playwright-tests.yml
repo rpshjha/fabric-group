@@ -69,7 +69,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          nname: html-report-${{ env.BROWSER }} 
+          nname: html-report-${{ env.BROWSER }}
           path: test-output/report/
           retention-days: 30
 
@@ -77,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts-${{ env.BROWSER }} 
+          name: test-artifacts-${{ env.BROWSER }}
           path: |
             test-output/artifacts/
             test-output/results/
