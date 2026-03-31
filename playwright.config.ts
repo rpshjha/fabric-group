@@ -92,7 +92,7 @@ export default defineConfig({
     ['json', { outputFile: 'test-output/results/results.json' }],
     ['junit', { outputFile: 'test-output/results/junit.xml' }],
     ['list'],
-    [path.join(process.cwd(), 'test-output/reporters/email-reporter.ts')],
+    [path.join(process.cwd(), 'src/reporters/email-reporter.ts')],
   ],
 
   use: {

@@ -61,7 +61,7 @@ jobs:
         run: npx playwright test --project=${{ matrix.browser }}
         continue-on-error: true
         env:
-          SEND_EMAIL_REPORT: false
+          SEND_EMAIL_REPORT: true
 
       - name: Upload HTML report
         if: always()

@@ -12,8 +12,7 @@
     "format:check": "prettier --check .",
     "test": "playwright test",
     "test:e2e": "playwright test tests/ui/e2e-banking-journey.spec.ts",
-    "test:api": "playwright test tests/api/transaction-search.spec.ts",
-    "test:report": "playwright show test-output/report"
+    "test:api": "playwright test tests/api/transaction-search.spec.ts"
   },
   "repository": {
     "type": "git",
