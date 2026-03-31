@@ -6,10 +6,10 @@ ParaBank is a realistic online banking application that allows users to manage f
 
 This project implements an end-to-end (E2E) automation framework covering:
 
-UI Test Automation
-API Test Automation
-CI/CD Integration (GitHub Actions)
-Email Reporting
+- UI Test Automation
+- API Test Automation
+- CI/CD Integration (GitHub Actions)
+- Email Reporting
 
 Application URL: https://parabank.parasoft.com/
 
@@ -34,7 +34,7 @@ npm run prepare
 ## Running Tests
 
 ```bash
-npm test
+npm run test
 npm run test:e2e
 npm run test:api
 npx playwright test --headed
