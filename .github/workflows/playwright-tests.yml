@@ -138,12 +138,12 @@ jobs:
 
           for results_file in test-artifacts/test-artifacts-*/results/results.json; do
             if [ -f "$results_file" ]; then
-              TESTS=$(jq '[.suites[].tests[]] | length' "$results_file" 2>/dev/null || echo "0")
-              PASSED=$(jq '[.suites[].tests[] | select(.results[-1].status=="passed")] | length' "$results_file" 2>/dev/null || echo "0")
-              FAILED=$(jq '[.suites[].tests[] | select(.results[-1].status=="failed")] | length' "$results_file" 2>/dev/null || echo "0")
-              SKIPPED=$(jq '[.suites[].tests[] | select(.results[-1].status=="skipped")] | length' "$results_file" 2>/dev/null || echo "0")
-              RETRIES=$(jq '[.suites[].tests[] | (.results | length - 1)] | add' "$results_file" 2>/dev/null || echo "0")
-              FLAKY=$(jq '[.suites[].tests[] | select((.results | length > 1) and (.results[-1].status == "passed"))] | length' "$results_file" 2>/dev/null || echo "0")
+              TESTS=$(jq '[.suites[].specs[].tests[]] | length' "$results_file" 2>/dev/null || echo "0")
+              PASSED=$(jq '[.suites[].specs[].tests[] | select(.results[-1].status=="passed")] | length' "$results_file" 2>/dev/null || echo "0")
+              FAILED=$(jq '[.suites[].specs[].tests[] | select(.results[-1].status=="failed")] | length' "$results_file" 2>/dev/null || echo "0")
+              SKIPPED=$(jq '[.suites[].specs[].tests[] | select(.results[-1].status=="skipped")] | length' "$results_file" 2>/dev/null || echo "0")
+              RETRIES=$(jq '[.suites[].specs[].tests[] | (.results | length - 1)] | add' "$results_file" 2>/dev/null || echo "0")
+              FLAKY=$(jq '[.suites[].specs[].tests[] | select((.results | length > 1) and (.results[-1].status == "passed"))] | length' "$results_file" 2>/dev/null || echo "0")
               
               TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
               TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
@@ -171,19 +171,20 @@ jobs:
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: |
-            🧪 Playwright Report: ${{ steps.parse_results.outputs.passed }}/${{ steps.parse_results.outputs.total_tests }} Passed
+            Playwright Report: ${{ steps.parse_results.outputs.passed }}/${{ steps.parse_results.outputs.total_tests }} Passed
 
           to: ${{ env.EMAIL_TO }}
           from: ${{ secrets.SMTP_USER }}
           priority: high
 
           attachments: |
-            test-artifacts/**/*.png
-            test-artifacts/**/*.webm
-            test-artifacts/**/*.zip
+            test-artifacts/**/*
+            test-artifacts/**/artifacts/**/*
+            test-artifacts/**/results/**/*
+            test-artifacts/**/report/**/*
 
           body: |
-            🧪 PLAYWRIGHT TEST EXECUTION REPORT
+            PLAYWRIGHT TEST EXECUTION REPORT
             ======================================
 
             📊 SUMMARY
