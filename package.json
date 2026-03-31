@@ -7,6 +7,7 @@
     "prepare": "husky",
     "precommit:check": "lint-staged",
     "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "test": "playwright test",
     "test:e2e": "playwright test tests/ui/e2e-banking-journey.spec.ts",
