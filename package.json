@@ -9,6 +9,7 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "playwright test",
     "test:e2e": "playwright test tests/ui/e2e-banking-journey.spec.ts",
     "test:api": "playwright test tests/api/transaction-search.spec.ts",
