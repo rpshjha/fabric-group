@@ -16,7 +16,7 @@ export const test = base.extend<{
   authenticatedPage: Page;
   apiContext: APIRequestContext;
 }>({
-  testContext: async (_, use): Promise<void> => {
+  testContext: async (_: unknown, use): Promise<void> => {
     const testContext = new TestContext();
 
     await use(testContext);

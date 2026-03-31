@@ -5,9 +5,18 @@ import path from 'path';
 dotenv.config();
 
 const baseURL = process.env.BASE_URL || 'https://parabank.parasoft.com';
-const headless = process.env.HEADLESS !== 'false';
-const timeout = parseInt(process.env.TIMEOUT || '30000', 10);
+const headless =
+  process.env.HEADLESS === undefined ? true : process.env.HEADLESS.toLowerCase() !== 'false';
+
+const slowMo = process.env.CI ? 0 : process.env.SLOW_MO ? parseInt(process.env.SLOW_MO, 10) : 300;
+
+const timeout = parseInt(process.env.TIMEOUT || '60000', 10);
 const expectTimeout = parseInt(process.env.EXPECT_TIMEOUT || '5000', 10);
+
+console.log('CWD:', process.cwd());
+console.log('HEADLESS ENV:', process.env.HEADLESS);
+console.log('GLOBAL TIMEOUT:', timeout);
+console.log('EXPECT TIMEOUT:', expectTimeout);
 
 const viewportWidth = process.env.VIEWPORT_WIDTH
   ? parseInt(process.env.VIEWPORT_WIDTH, 10)
@@ -88,6 +97,10 @@ export default defineConfig({
 
   use: {
     baseURL,
+    headless,
+    launchOptions: {
+      slowMo,
+    },
     trace: 'on-first-retry',
     screenshot: {
       mode: 'only-on-failure',

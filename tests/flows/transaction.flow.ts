@@ -36,7 +36,7 @@ export class TransactionFlow {
 
     expect(accounts.length).toBeGreaterThan(0);
 
-    this.context.setPrimaryAccount(accounts[0].accountId);
+    this.context.addAccount(accounts[0].accountId);
   }
 
   private async makeBillPayment() {

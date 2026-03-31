@@ -196,6 +196,7 @@ export class BillPaymentBuilder {
       phone: this.payeeData.phone,
       amount: this.amount,
       accountId: this.accountId,
+      accountNumber: this.payeeData.accountNumber,
     };
   }
 }

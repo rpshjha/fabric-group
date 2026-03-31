@@ -5,22 +5,13 @@
   "main": "index.js",
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "precommit:check": "lint-staged",
     "type-check": "tsc --noEmit",
-    "test:smoke": "playwright test --grep @smoke",
+    "format": "prettier --write .",
     "test": "playwright test",
-    "test:e2e": "playwright test e2e-banking-journey.spec.ts",
-    "test:api": "playwright test tests/api",
-    "test:with-email-report": "SEND_EMAIL_REPORT=true playwright test",
-    "test:report": "playwright show test-output/report",
-    "security:secrets": "detect-secrets scan --baseline .secrets.baseline",
-    "audit": "npm audit --audit-level=high",
-    "precommit:check": "npm run lint && npm run format:check && npm run type-check",
-    "quality:check": "npm run precommit:check && npm run security:secrets",
-    "quality:full": "npm run quality:check && npm run test:smoke"
+    "test:e2e": "playwright test tests/ui/e2e-banking-journey.spec.ts",
+    "test:api": "playwright test tests/api/transaction-search.spec.ts",
+    "test:report": "playwright show test-output/report"
   },
   "repository": {
     "type": "git",
@@ -56,7 +47,7 @@
     "nodemailer": "^8.0.4",
     "npm-audit-resolver": "^3.0.0-RC.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.4.5",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {

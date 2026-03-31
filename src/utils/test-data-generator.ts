@@ -1,4 +1,13 @@
-import { fakerEN_AU as faker } from '@faker-js/faker';
+import { AccountType } from '@/fixtures/test-context';
+import { faker as baseFaker, allFakers } from '@faker-js/faker';
+
+function getFakerInstance() {
+  const locale = process.env.FAKER_LOCALE?.replace('-', '_') || 'en_AU';
+
+  return (allFakers as Record<string, typeof baseFaker>)[locale] || baseFaker;
+}
+
+const faker = getFakerInstance();
 
 export interface UserRegistrationData {
   firstName: string;
@@ -21,7 +30,7 @@ export interface TestUser {
 }
 
 export interface AccountCreationData {
-  accountType: 'CHECKING' | 'SAVINGS' | 'MONEY_MARKET';
+  accountType: AccountType;
   accountName: string;
   initialDeposit?: number;
 }
@@ -59,24 +68,19 @@ export function generateAddress() {
 }
 
 export function generatePhoneNumber(): string {
-  return faker.phone.number().replace(/\D/g, '');
+  return faker.number.int({ min: 6000000000, max: 9999999999 }).toString();
 }
 
-export function generateSSN(): string {
-  const area = String(faker.number.int({ min: 100, max: 665 })).padStart(3, '0');
-  const group = String(faker.number.int({ min: 1, max: 99 })).padStart(2, '0');
-  const serial = String(faker.number.int({ min: 1, max: 9999 })).padStart(4, '0');
-  return `${area}-${group}-${serial}`;
+export function generateUniqueId(): string {
+  return faker.number.int({ min: 100000000000, max: 999999999999 }).toString();
 }
 
 export function generateUniqueTestUser(): TestUser {
-  const timestamp = Date.now();
-
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
 
   return {
-    username: `${firstName.toLowerCase()}${lastName.toLowerCase()}_${timestamp}`,
+    username: `${firstName}${lastName}`.toLowerCase().replace(/[^a-z0-9]/g, ''),
     password: `Admin@123`,
     firstName,
     lastName,
@@ -95,30 +99,10 @@ export function generateUserRegistrationData(): UserRegistrationData {
     state: address.state,
     zipCode: address.zipCode,
     phone: generatePhoneNumber(),
-    ssn: generateSSN(),
+    ssn: generateUniqueId(),
     username: testUser.username,
     password: testUser.password,
   };
-}
-
-export function generateAccountName(accountType: 'CHECKING' | 'SAVINGS' = 'SAVINGS'): string {
-  const adjectives = [
-    'Primary',
-    'Secondary',
-    'Emergency',
-    'Vacation',
-    'College',
-    'Retirement',
-    'Investment',
-    'Joint',
-  ];
-  const purposes = ['Fund', 'Account', 'Reserve'];
-
-  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const purpose = purposes[Math.floor(Math.random() * purposes.length)];
-  const type = accountType === 'CHECKING' ? 'Checking' : 'Savings';
-
-  return `${adjective} ${type} ${purpose}`;
 }
 
 export function generateTransferAmount(min = 10, max = 2500): number {
@@ -143,6 +127,7 @@ export function generatePayeeData() {
 
   const payeeName = payeeNames[Math.floor(Math.random() * payeeNames.length)];
   const address = generateAddress();
+  const accountNumber = Math.floor(100000000 + Math.random() * 900000000).toString();
 
   return {
     name: payeeName,
@@ -151,6 +136,7 @@ export function generatePayeeData() {
     state: address.state,
     zipCode: address.zipCode,
     phone: generatePhoneNumber(),
+    accountNumber,
   };
 }
 
