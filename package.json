@@ -6,6 +6,7 @@
   "scripts": {
     "prepare": "husky",
     "precommit:check": "lint-staged",
+    "type-check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "playwright test",
     "test:e2e": "playwright test tests/ui/e2e-banking-journey.spec.ts",
@@ -46,7 +47,7 @@
     "nodemailer": "^8.0.4",
     "npm-audit-resolver": "^3.0.0-RC.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.4.5",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
