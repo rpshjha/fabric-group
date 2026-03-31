@@ -31,10 +31,15 @@ export class TransactionAPI extends APIService {
    * @returns List of transactions matching the amount from the search API
    * @throws Error if unable to search transactions
    */
-  async findTransactionsByAmount(accountId: string, amount: number): Promise<TransactionList> {
+  async findTransactionsByAmount(
+    accountId: string,
+    amount: number,
+    options: { headers?: Record<string, string> } = {}
+  ): Promise<TransactionList> {
     const searchEndpoint = `/parabank/services/bank/accounts/${accountId}/transactions/search`;
 
     const res = await this.client.get<TransactionList>(searchEndpoint, {
+      headers: options.headers,
       queryParams: { amount: amount.toString() },
     });
 
@@ -57,9 +62,15 @@ export class TransactionAPI extends APIService {
    * @returns The transaction details
    * @throws Error if API call fails or returns non-200 status
    */
-  async getTransactionById(transactionId: number): Promise<Transaction> {
+  async getTransactionById(
+    transactionId: number,
+    options: { headers?: Record<string, string> } = {}
+  ): Promise<Transaction> {
     const res = await this.client.get<Transaction>(
-      `/parabank/services_proxy/bank/transactions/${transactionId}`
+      `/parabank/services_proxy/bank/transactions/${transactionId}`,
+      {
+        headers: options.headers,
+      }
     );
 
     if (res.status !== 200) {

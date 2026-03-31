@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class AccountActivityPage extends BasePage {
@@ -7,7 +7,6 @@ export class AccountActivityPage extends BasePage {
   private readonly typeDropdown: Locator;
   private readonly goButton: Locator;
   private readonly transactionTable: Locator;
-  private readonly noTransactionsMsg: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -16,7 +15,6 @@ export class AccountActivityPage extends BasePage {
     this.typeDropdown = page.locator('#transactionType');
     this.goButton = page.locator('input.button[value="Go"]');
     this.transactionTable = page.locator('#transactionTable');
-    this.noTransactionsMsg = page.locator('#noTransactions');
   }
 
   public async isPageLoaded(): Promise<boolean> {
@@ -30,15 +28,20 @@ export class AccountActivityPage extends BasePage {
   }
 
   private getRow(description: string): Locator {
-    return this.transactionTable.locator('tbody tr', {
-      has: this.page.getByRole('link', { name: new RegExp(description, 'i') }),
+    return this.transactionTable.locator('tbody tr').filter({
+      hasText: description,
     });
   }
 
-  public async getTransactionFromTable(description: string): Promise<{
-    date: string;
-    amount: string;
-  }> {
+  public async waitForTransaction(description: string) {
+    await expect
+      .poll(async () => {
+        return await this.getRow(description).count();
+      })
+      .toBeGreaterThan(0);
+  }
+
+  public async getTransactionFromTable(description: string) {
     const row = this.getRow(description);
 
     return {

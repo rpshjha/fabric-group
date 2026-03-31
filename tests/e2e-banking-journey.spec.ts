@@ -6,6 +6,9 @@ import { TestContext } from '@fixtures/test-context';
 import { UI_ROUTES } from '@constants/endpoints';
 import { AccountServicesPage } from '@/pages/AccountServicesPage';
 import { AccountsOverviewPage } from '@/pages/AccountsOverviewPage';
+import { AccountActivityPage } from '@/pages/AccountActivityPage';
+import { TransactionDetailsPage } from '@/pages/Transaction DetailsPage';
+import { TransactionAPI } from '@api/TransactionAPI';
 
 test('User completes end-to-end banking journey successfully', async ({ page }) => {
   test.setTimeout(60000);
@@ -123,6 +126,8 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
       .withTypicalAmount()
       .build();
 
+    context.setBillPayee(payment.payee);
+
     await billPayPage.payBill({
       name: payment.payee,
       address: payment.address,
@@ -139,5 +144,57 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
       billPayPage.getSuccessMessage(),
       'Bill payment should complete successfully and display a confirmation message'
     ).resolves.toBeTruthy();
+  });
+
+  await test.step('Search the transactions using Find Transactions API', async () => {
+    const accountsOverviewPage = await accountServicesPage.goToAccountsOverview();
+    const fromAccount = context.getSecondaryAccount()!;
+
+    await accountsOverviewPage.clickOnAccount(fromAccount);
+    await page.waitForLoadState('networkidle');
+
+    const accountActivityPage = new AccountActivityPage(page);
+    await expect(accountActivityPage.isPageLoaded()).resolves.toBeTruthy();
+    const billPayee = context.getBillPayee()!;
+    const transactionDescription = `Bill Payment to ${billPayee}`;
+    const transactionRow =
+      await accountActivityPage.getTransactionFromTable(transactionDescription);
+
+    expect(transactionRow.date).toBeTruthy();
+    expect(Number(transactionRow.amount.replace(/[^\d.]/g, ''))).toBeGreaterThan(0);
+
+    await accountActivityPage.clickTransaction(transactionDescription);
+
+    const transactionDetailsPage = new TransactionDetailsPage(page);
+    await expect(transactionDetailsPage.isPageLoaded()).resolves.toBeTruthy();
+
+    const uiTransaction = await transactionDetailsPage.getDetails();
+
+    const transactionId = Number(uiTransaction.id);
+    expect(transactionId).toBeGreaterThan(0);
+
+    const cookies = await page.context().cookies();
+    const jsession = cookies.find((c) => c.name === 'JSESSIONID')?.value;
+
+    expect(jsession, 'JSESSIONID cookie should be available').toBeTruthy();
+
+    const transactionApi = new TransactionAPI(page.request);
+
+    const billAmount = Number(uiTransaction.amount.replace(/[^\d.]/g, ''));
+    const apiTransaction = await transactionApi.getTransactionById(transactionId, {
+      headers: {
+        Cookie: `JSESSIONID=${jsession}`,
+      },
+    });
+
+    expect(apiTransaction.id).toBe(transactionId);
+    expect(apiTransaction.accountId).toBe(Number(fromAccount));
+    expect(apiTransaction.type).toBe(uiTransaction.type);
+    expect(apiTransaction.amount).toBeCloseTo(billAmount, 2);
+    expect(apiTransaction.description).toBe(transactionDescription);
+
+    const apiDate = new Date(apiTransaction.date);
+    const uiDate = new Date(uiTransaction.date);
+    expect(apiDate.toDateString()).toBe(uiDate.toDateString());
   });
 });

@@ -21,6 +21,7 @@ export interface TestContextData {
   transactions?: {
     lastTransferAmount?: number;
     lastBillAmount?: number;
+    billPayee?: string;
     transactions?: any[];
     transactionId?: number;
   };
@@ -69,6 +70,15 @@ export class TestContext {
 
   getLastBillAmount(): number | undefined {
     return this.data.transactions?.lastBillAmount;
+  }
+
+  setBillPayee(payee: string): void {
+    if (!this.data.transactions) this.data.transactions = {};
+    this.data.transactions.billPayee = payee;
+  }
+
+  getBillPayee(): string | undefined {
+    return this.data.transactions?.billPayee;
   }
 
   setTransactions(transactions: any[]): void {

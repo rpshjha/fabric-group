@@ -101,11 +101,9 @@ export default defineConfig({
     launchOptions: {
       slowMo,
     },
-    trace: 'on-first-retry',
-    screenshot: {
-      mode: 'only-on-failure',
-    },
+    screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    trace: 'retain-on-failure',
     actionTimeout: 10000,
   },
 
