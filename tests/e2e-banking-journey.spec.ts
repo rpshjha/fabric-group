@@ -203,14 +203,11 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
       }
       const transactionApi = new TransactionAPI(page.request);
 
-      const apiTransaction = await transactionApi.getTransactionById(
-        transactionData.transactionId,
-        {
-          headers: {
-            Cookie: `JSESSIONID=${context.getSessionId()}`,
-          },
-        }
-      );
+      const apiTransaction = await transactionApi.getById(transactionData.transactionId, {
+        headers: {
+          Cookie: `JSESSIONID=${context.getSessionId()}`,
+        },
+      });
 
       expect(apiTransaction.id).toBe(transactionData.transactionId);
       expect(apiTransaction.accountId).toBe(Number(transactionData.fromAccount));

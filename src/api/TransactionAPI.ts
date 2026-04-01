@@ -2,13 +2,7 @@ import { APIService } from './core/api-service';
 import type { TransactionList, Transaction } from './types/transaction.types';
 
 export class TransactionAPI extends APIService {
-  /**
-   * Retrieves all transactions for a specific account
-   * @param accountId - The account identifier to fetch transactions for
-   * @returns List of transactions for the account
-   * @throws Error if API call fails or returns non-200 status
-   */
-  async getTransactions(accountId: string): Promise<TransactionList> {
+  async getByAccountId(accountId: string): Promise<TransactionList> {
     const res = await this.client.get<TransactionList>(`/transactions/${accountId}`);
 
     if (res.status !== 200) {
@@ -24,14 +18,7 @@ export class TransactionAPI extends APIService {
     return res.data;
   }
 
-  /**
-   * Searches for transactions matching a specific amount using the Find Transactions API
-   * @param accountId - The account to search within
-   * @param amount - The transaction amount to search for
-   * @returns List of transactions matching the amount from the search API
-   * @throws Error if unable to search transactions
-   */
-  async findTransactionsByAmount(
+  async searchByAmount(
     accountId: string,
     amount: number,
     options: { headers?: Record<string, string> } = {}
@@ -56,13 +43,7 @@ export class TransactionAPI extends APIService {
     return res.data;
   }
 
-  /**
-   * Retrieves a specific transaction by its ID
-   * @param transactionId - The transaction identifier to fetch
-   * @returns The transaction details
-   * @throws Error if API call fails or returns non-200 status
-   */
-  async getTransactionById(
+  async getById(
     transactionId: number,
     options: { headers?: Record<string, string> } = {}
   ): Promise<Transaction> {
