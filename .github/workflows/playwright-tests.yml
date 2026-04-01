@@ -23,7 +23,7 @@ on:
         default: 'chromium'
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
   BROWSER: ${{ github.event.inputs.browser || 'chromium' }}
   BASE_URL: https://parabank.parasoft.com
   HEADLESS: 'true'
@@ -205,14 +205,16 @@ jobs:
             test-artifacts/**/*.zip
             test-artifacts/**/*.webm
             test-artifacts/**/*.trace
-
+          
+          content_type: text/html
+          
           body: |
             <html>
-            <body style="font-family: Arial, sans-serif;">
+            <body style="font-family: Arial, sans-serif; padding:20px; background-color:#f9f9f9; color:#333;">
 
               <h2 style="color:#2c3e50;">Playwright Test Report</h2>
 
-              <table style="border-collapse: collapse; width: 50%;">
+              <table style="border-collapse: collapse; width: 100%;">
                 <tr>
                   <th style="border:1px solid #ddd; padding:8px;">Metric</th>
                   <th style="border:1px solid #ddd; padding:8px;">Value</th>
@@ -261,7 +263,7 @@ jobs:
 
               <br/>
 
-              <h3>Status:
+              <h3 style="margin-top:20px;>Status:
                 <span style="color:${{ (steps.parse_results.outputs.failed || '0') > 0 && 'red' || 'green' }}">
                   ${{ (steps.parse_results.outputs.failed || '0') > 0 && 'FAILED ❌' || 'PASSED ✅' }}
                 </span>
