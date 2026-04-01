@@ -4,6 +4,8 @@ import {
   generateTransferAmount,
   generateBillAmount,
   generatePayeeData,
+  TransferData,
+  BillPaymentData,
 } from './test-data-generator';
 
 export class UserBuilder {
@@ -136,7 +138,7 @@ export class TransferBuilder {
     return this;
   }
 
-  build() {
+  build(): TransferData {
     return {
       fromAccountId: this.fromAccountId,
       toAccountId: this.toAccountId,
@@ -186,7 +188,7 @@ export class BillPaymentBuilder {
     return this;
   }
 
-  build() {
+  build(): BillPaymentData {
     return {
       payee: this.payeeData.name,
       address: this.payeeData.address,

@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
-import path from 'path';
 
 dotenv.config();
 
@@ -13,12 +12,6 @@ const slowMo = process.env.CI ? 0 : process.env.SLOW_MO ? parseInt(process.env.S
 const timeout = parseInt(process.env.TIMEOUT || '60000', 10);
 const expectTimeout = parseInt(process.env.EXPECT_TIMEOUT || '5000', 10);
 const retries = process.env.RETRIES ? parseInt(process.env.RETRIES, 10) : 1;
-
-console.log('CWD:', process.cwd());
-console.log('HEADLESS ENV:', process.env.HEADLESS);
-console.log('GLOBAL TIMEOUT:', timeout);
-console.log('EXPECT TIMEOUT:', expectTimeout);
-console.log('RETRIES:', retries);
 
 const viewportWidth = process.env.VIEWPORT_WIDTH
   ? parseInt(process.env.VIEWPORT_WIDTH, 10)
@@ -94,7 +87,6 @@ export default defineConfig({
     ['json', { outputFile: 'test-output/results/results.json' }],
     ['junit', { outputFile: 'test-output/results/junit.xml' }],
     ['list'],
-    [path.join(process.cwd(), 'src/reporters/email-reporter.ts')],
   ],
 
   use: {
