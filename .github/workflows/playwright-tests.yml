@@ -140,6 +140,8 @@ jobs:
           TOTAL_SKIPPED=0          
           TOTAL_RETRIES=0
           FLAKY_TESTS=0
+          RETRIED_TESTS=0
+          RETRIED_TEST_NAMES=""
 
           for results_file in test-artifacts/test-artifacts-*/results/results.json; do
             if [ -f "$results_file" ]; then
@@ -149,6 +151,8 @@ jobs:
               SKIPPED=$(jq '[.suites[].specs[].tests[] | select(.results[-1].status=="skipped")] | length' "$results_file" 2>/dev/null || echo "0")
               RETRIES=$(jq '[.suites[].specs[].tests[] | (.results | length - 1)] | add' "$results_file" 2>/dev/null || echo "0")
               FLAKY=$(jq '[.suites[].specs[].tests[] | select((.results | length > 1) and (.results[-1].status == "passed"))] | length' "$results_file" 2>/dev/null || echo "0")
+              RETRIED=$(jq '[.suites[].specs[].tests[] | select(.results | length > 1)] | length' "$results_file" 2>/dev/null || echo "0")
+              RETRIED_NAMES=$(jq -r '[.suites[].specs[].tests[] | select(.results | length > 1) | .title] | unique | join(", ")' "$results_file" 2>/dev/null || echo "")
               
               TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
               TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
@@ -156,6 +160,14 @@ jobs:
               TOTAL_SKIPPED=$((TOTAL_SKIPPED + SKIPPED))
               TOTAL_RETRIES=$((TOTAL_RETRIES + RETRIES))
               FLAKY_TESTS=$((FLAKY_TESTS + FLAKY))
+              RETRIED_TESTS=$((RETRIED_TESTS + RETRIED))
+              if [ -n "$RETRIED_NAMES" ]; then
+                if [ -z "$RETRIED_TEST_NAMES" ]; then
+                  RETRIED_TEST_NAMES="$RETRIED_NAMES"
+                else
+                  RETRIED_TEST_NAMES="$RETRIED_TEST_NAMES, $RETRIED_NAMES"
+                fi
+              fi
             fi
           done
 
@@ -165,6 +177,8 @@ jobs:
           echo "skipped=$TOTAL_SKIPPED" >> $GITHUB_OUTPUT
           echo "retries=$TOTAL_RETRIES" >> $GITHUB_OUTPUT
           echo "flaky=$FLAKY_TESTS" >> $GITHUB_OUTPUT
+          echo "retried_tests=$RETRIED_TESTS" >> $GITHUB_OUTPUT
+          echo "retried_test_names=$RETRIED_TEST_NAMES" >> $GITHUB_OUTPUT
           echo "pass_rate=$((TOTAL_PASSED * 100 / (TOTAL_TESTS > 0 ? TOTAL_TESTS : 1)))" >> $GITHUB_OUTPUT
 
       - name: Send test report email
@@ -193,61 +207,80 @@ jobs:
             test-artifacts/**/*.trace
 
           body: |
-            PLAYWRIGHT TEST EXECUTION REPORT
-            ======================================
+            <html>
+            <body style="font-family: Arial, sans-serif;">
 
-            📊 SUMMARY
-            --------------------------------------
-            Total Tests   : ${{ steps.parse_results.outputs.total_tests || 'N/A' }}
-            ✅ Passed     : ${{ steps.parse_results.outputs.passed || 'N/A' }}
-            ❌ Failed     : ${{ steps.parse_results.outputs.failed || 'N/A' }}
-            ⏭️ Skipped    : ${{ steps.parse_results.outputs.skipped || 'N/A' }}
+              <h2 style="color:#2c3e50;">Playwright Test Report</h2>
 
-            🔁 Retries    : ${{ steps.parse_results.outputs.retries || 'N/A' }}
-            ⚠️ Flaky      : ${{ steps.parse_results.outputs.flaky || 'N/A' }}
+              <table style="border-collapse: collapse; width: 50%;">
+                <tr>
+                  <th style="border:1px solid #ddd; padding:8px;">Metric</th>
+                  <th style="border:1px solid #ddd; padding:8px;">Value</th>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">Total Tests</td>
+                  <td style="border:1px solid #ddd; padding:8px;">${{ steps.parse_results.outputs.total_tests }}</td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">✅ Passed</td>
+                  <td style="border:1px solid #ddd; padding:8px; color:green;">
+                    ${{ steps.parse_results.outputs.passed }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">❌ Failed</td>
+                  <td style="border:1px solid #ddd; padding:8px; color:red;">
+                    ${{ steps.parse_results.outputs.failed }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">Retry Attempts</td>
+                  <td style="border:1px solid #ddd; padding:8px;">
+                    ${{ steps.parse_results.outputs.retries || '0' }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">Retried Tests</td>
+                  <td style="border:1px solid #ddd; padding:8px;">
+                    ${{ steps.parse_results.outputs.retried_tests || '0' }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">Retried Test Names</td>
+                  <td style="border:1px solid #ddd; padding:8px;">
+                    ${{ steps.parse_results.outputs.retried_test_names || 'None' }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #ddd; padding:8px;">Pass Rate</td>
+                  <td style="border:1px solid #ddd; padding:8px;">
+                    ${{ steps.parse_results.outputs.pass_rate }}%
+                  </td>
+                </tr>
+              </table>
 
-            📈 Pass Rate  : ${{ steps.parse_results.outputs.pass_rate || 'N/A' }}%
+              <br/>
 
-            ======================================
+              <h3>Status:
+                <span style="color:${{ (steps.parse_results.outputs.failed || '0') > 0 && 'red' || 'green' }}">
+                  ${{ (steps.parse_results.outputs.failed || '0') > 0 && 'FAILED ❌' || 'PASSED ✅' }}
+                </span>
+              </h3>
 
-            🚦 STATUS
-            --------------------------------------
-            ${{ (steps.parse_results.outputs.failed || '0') > 0 && '❌ FAILED' || '✅ PASSED' }}
+              <p>
+                🔗 <b>View Full Report:</b><br/>
+                <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">
+                  Open GitHub Run
+                </a>
+              </p>
 
-            ======================================
+              <hr/>
 
-            🔍 FAILED TEST DEBUG
-            --------------------------------------
-            👉 Screenshots, Videos & Traces are attached in this email
+              <p style="font-size:12px; color:gray;">
+                Repo: ${{ github.repository }} <br/>
+                Branch: ${{ github.ref_name }} <br/>
+                Trigger: ${{ github.event_name }}
+              </p>
 
-            👉 You can also view/download from GitHub:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            ======================================
-
-            📦 REPORTS
-            --------------------------------------
-            HTML Report:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            JSON Results:
-            Available in artifacts
-
-            ======================================
-
-            🧠 EXECUTION DETAILS
-            --------------------------------------
-            Repo     : ${{ github.repository }}
-            Branch   : ${{ github.ref_name }}
-            Commit   : ${{ github.sha }}
-            Trigger  : ${{ github.event_name }}
-
-            ======================================
-
-            ⚠️ NOTES
-            --------------------------------------
-            - Video, screenshots & traces are attached
-            - Video recorded only for failed tests
-            - For full debug, check GitHub run link
-
-            ======================================
+            </body>
+            </html>

@@ -153,48 +153,74 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
     await accountsOverviewPage.clickOnAccount(fromAccount);
     await page.waitForLoadState('networkidle');
 
-    const accountActivityPage = new AccountActivityPage(page);
-    await expect(accountActivityPage.isPageLoaded()).resolves.toBeTruthy();
-    const billPayee = context.getBillPayee()!;
-    const transactionDescription = `Bill Payment to ${billPayee}`;
-    const transactionRow =
-      await accountActivityPage.getTransactionFromTable(transactionDescription);
+    await test.step('Fetch last bill payment transaction from UI', async () => {
+      const accountActivityPage = new AccountActivityPage(page);
+      await expect(accountActivityPage.isPageLoaded()).resolves.toBeTruthy();
 
-    expect(transactionRow.date).toBeTruthy();
-    expect(Number(transactionRow.amount.replace(/[^\d.]/g, ''))).toBeGreaterThan(0);
+      const billPayee = context.getBillPayee()!;
+      const transactionDescription = `Bill Payment to ${billPayee}`;
+      const transactionRow =
+        await accountActivityPage.getTransactionFromTable(transactionDescription);
 
-    await accountActivityPage.clickTransaction(transactionDescription);
+      expect(transactionRow.date).toBeTruthy();
+      expect(Number(transactionRow.amount.replace(/[^\d.]/g, ''))).toBeGreaterThan(0);
 
-    const transactionDetailsPage = new TransactionDetailsPage(page);
-    await expect(transactionDetailsPage.isPageLoaded()).resolves.toBeTruthy();
+      await accountActivityPage.clickTransaction(transactionDescription);
 
-    const uiTransaction = await transactionDetailsPage.getDetails();
+      const transactionDetailsPage = new TransactionDetailsPage(page);
+      await expect(transactionDetailsPage.isPageLoaded()).resolves.toBeTruthy();
 
-    const transactionId = Number(uiTransaction.id);
-    expect(transactionId).toBeGreaterThan(0);
+      const uiTransaction = await transactionDetailsPage.getDetails();
+      const transactionId = Number(uiTransaction.id);
 
-    const cookies = await page.context().cookies();
-    const jsession = cookies.find((c) => c.name === 'JSESSIONID')?.value;
+      expect(transactionId).toBeGreaterThan(0);
 
-    expect(jsession, 'JSESSIONID cookie should be available').toBeTruthy();
+      const cookies = await page.context().cookies();
+      const jsession = cookies.find((c) => c.name === 'JSESSIONID')?.value;
 
-    const transactionApi = new TransactionAPI(page.request);
+      expect(jsession, 'JSESSIONID cookie should be available').toBeTruthy();
+      if (!jsession) {
+        throw new Error('JSESSIONID cookie missing; cannot proceed with API validation');
+      }
+      context.setSessionId(jsession);
 
-    const billAmount = Number(uiTransaction.amount.replace(/[^\d.]/g, ''));
-    const apiTransaction = await transactionApi.getTransactionById(transactionId, {
-      headers: {
-        Cookie: `JSESSIONID=${jsession}`,
-      },
+      context.setLastBillPayTransaction({
+        transactionId,
+        fromAccount,
+        billAmount: Number(uiTransaction.amount.replace(/[^\d.]/g, '')),
+        transactionDescription,
+        transactionUiId: uiTransaction.id,
+        transactionType: uiTransaction.type,
+        transactionUiAmount: uiTransaction.amount,
+        transactionDate: uiTransaction.date,
+      });
     });
 
-    expect(apiTransaction.id).toBe(transactionId);
-    expect(apiTransaction.accountId).toBe(Number(fromAccount));
-    expect(apiTransaction.type).toBe(uiTransaction.type);
-    expect(apiTransaction.amount).toBeCloseTo(billAmount, 2);
-    expect(apiTransaction.description).toBe(transactionDescription);
+    await test.step('Validate fetched transaction via Transaction API', async () => {
+      const transactionData = context.getLastBillPayTransaction();
+      if (!transactionData) {
+        throw new Error('No last bill pay transaction found in context to validate');
+      }
+      const transactionApi = new TransactionAPI(page.request);
 
-    const apiDate = new Date(apiTransaction.date);
-    const uiDate = new Date(uiTransaction.date);
-    expect(apiDate.toDateString()).toBe(uiDate.toDateString());
+      const apiTransaction = await transactionApi.getTransactionById(
+        transactionData.transactionId,
+        {
+          headers: {
+            Cookie: `JSESSIONID=${context.getSessionId()}`,
+          },
+        }
+      );
+
+      expect(apiTransaction.id).toBe(transactionData.transactionId);
+      expect(apiTransaction.accountId).toBe(Number(transactionData.fromAccount));
+      expect(apiTransaction.type).toBe(transactionData.transactionType);
+      expect(apiTransaction.amount).toBeCloseTo(transactionData.billAmount, 2);
+      expect(apiTransaction.description).toBe(transactionData.transactionDescription);
+
+      const apiDate = new Date(apiTransaction.date);
+      const uiDate = new Date(transactionData.transactionDate);
+      expect(apiDate.toDateString()).toBe(uiDate.toDateString());
+    });
   });
 });

@@ -12,11 +12,13 @@ const slowMo = process.env.CI ? 0 : process.env.SLOW_MO ? parseInt(process.env.S
 
 const timeout = parseInt(process.env.TIMEOUT || '60000', 10);
 const expectTimeout = parseInt(process.env.EXPECT_TIMEOUT || '5000', 10);
+const retries = process.env.RETRIES ? parseInt(process.env.RETRIES, 10) : 1;
 
 console.log('CWD:', process.cwd());
 console.log('HEADLESS ENV:', process.env.HEADLESS);
 console.log('GLOBAL TIMEOUT:', timeout);
 console.log('EXPECT TIMEOUT:', expectTimeout);
+console.log('RETRIES:', retries);
 
 const viewportWidth = process.env.VIEWPORT_WIDTH
   ? parseInt(process.env.VIEWPORT_WIDTH, 10)
@@ -79,7 +81,7 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : retries,
   workers: process.env.CI ? 2 : undefined,
 
   timeout,
