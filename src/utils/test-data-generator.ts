@@ -1,9 +1,7 @@
-import { AccountType } from '@/fixtures/test-context';
 import { faker as baseFaker, allFakers } from '@faker-js/faker';
 
 function getFakerInstance() {
   const locale = process.env.FAKER_LOCALE?.replace('-', '_') || 'en_AU';
-
   return (allFakers as Record<string, typeof baseFaker>)[locale] || baseFaker;
 }
 
@@ -29,12 +27,6 @@ export interface TestUser {
   lastName: string;
 }
 
-export interface AccountCreationData {
-  accountType: AccountType;
-  accountName: string;
-  initialDeposit?: number;
-}
-
 export interface TransferData {
   fromAccountId: number;
   toAccountId: number;
@@ -54,12 +46,7 @@ export interface BillPaymentData {
   accountNumber: string;
 }
 
-export function seedFaker(seed?: number): void {
-  const actualSeed = seed || Math.floor(Date.now() / 1000);
-  faker.seed(actualSeed);
-}
-
-export function generateAddress() {
+function generateAddress() {
   return {
     street: faker.location.streetAddress(),
     city: faker.location.city(),
@@ -68,11 +55,11 @@ export function generateAddress() {
   };
 }
 
-export function generatePhoneNumber(): string {
+function generatePhoneNumber(): string {
   return faker.number.int({ min: 6000000000, max: 9999999999 }).toString();
 }
 
-export function generateUniqueId(): string {
+function generateUniqueId(): string {
   return faker.number.int({ min: 100000000000, max: 999999999999 }).toString();
 }
 
@@ -88,7 +75,7 @@ export function generateUniqueTestUser(): TestUser {
   };
 }
 
-export function generateUserRegistrationData(): UserRegistrationData {
+function generateUserRegistrationData(): UserRegistrationData {
   const testUser = generateUniqueTestUser();
   const address = generateAddress();
 
@@ -106,15 +93,15 @@ export function generateUserRegistrationData(): UserRegistrationData {
   };
 }
 
-export function generateTransferAmount(min = 10, max = 2500): number {
+function generateTransferAmount(min = 10, max = 2500): number {
   return Math.round(faker.number.float({ min, max, multipleOf: 0.01 }) * 100) / 100;
 }
 
-export function generateBillAmount(min = 10, max = 500): number {
+function generateBillAmount(min = 10, max = 500): number {
   return Math.round(faker.number.float({ min, max, multipleOf: 0.01 }) * 100) / 100;
 }
 
-export function generatePayeeData() {
+function generatePayeeData() {
   const payeeNames = [
     'City Power Company',
     'Metropolitan Water Authority',
@@ -144,3 +131,10 @@ export function generatePayeeData() {
 export function generateRandomAmount(min = 1, max = 1000): number {
   return Math.round((Math.random() * (max - min) + min) * 100) / 100;
 }
+
+export {
+  generateUserRegistrationData,
+  generateTransferAmount,
+  generateBillAmount,
+  generatePayeeData,
+};
