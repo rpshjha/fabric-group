@@ -26,7 +26,6 @@ export const test = base.extend<{
 
   apiContext: async ({ playwright }, use): Promise<void> => {
     const apiContext = await playwright.request.newContext();
-
     await use(apiContext);
     await apiContext.dispose();
   },

@@ -3,54 +3,40 @@ import { APIRequestContext, APIResponse } from '@playwright/test';
 export interface ApiResponse<T> {
   status: number;
   data: T;
-  raw: APIResponse;
 }
 
-export interface RequestOptions<T = unknown> {
+export interface RequestOptions {
+  params?: Record<string, string | number>;
   headers?: Record<string, string>;
-  queryParams?: Record<string, string | number>;
-  body?: T;
 }
 
 export class APIClient {
-  constructor(private readonly request: APIRequestContext) {}
+  constructor(private request: APIRequestContext) {}
 
-  async get<T>(url: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
-    return this.requestWrapper<T>(() =>
-      this.request.get(url, {
-        headers: options.headers,
-        params: options.queryParams,
-      })
-    );
+  async get<T>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
+    const res = await this.request.get(url, options);
+    return this.parse<T>(res);
   }
 
-  async post<T, B = unknown>(
-    url: string,
-    options: RequestOptions<B> = {}
-  ): Promise<ApiResponse<T>> {
-    return this.requestWrapper<T>(() =>
-      this.request.post(url, {
-        headers: options.headers,
-        data: options.body,
-      })
-    );
+  async post<T>(url: string, body?: unknown): Promise<ApiResponse<T>> {
+    const res = await this.request.post(url, { data: body });
+    return this.parse<T>(res);
   }
 
-  private async requestWrapper<T>(apiCall: () => Promise<APIResponse>): Promise<ApiResponse<T>> {
-    const response = await apiCall();
-    const text = await response.text();
-
-    let parsed: T;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = text as unknown as T;
-    }
+  private async parse<T>(res: APIResponse): Promise<ApiResponse<T>> {
+    const text = await res.text();
 
     return {
-      status: response.status(),
-      data: parsed,
-      raw: response,
+      status: res.status(),
+      data: this.safeParse<T>(text),
     };
+  }
+
+  private safeParse<T>(text: string): T {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text as unknown as T;
+    }
   }
 }

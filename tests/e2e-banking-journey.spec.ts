@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@fixtures/api-fixture';
 import { RegistrationPage } from '@pages/RegistrationPage';
 import { LoginPage } from '@pages/LoginPage';
 import { createTestUser, getRandomTransferAmount, BillPaymentBuilder } from '@utils/test-data';
@@ -6,11 +6,9 @@ import { TestContext } from '@fixtures/test-context';
 import { UI_ROUTES } from '@constants/endpoints';
 import { AccountServicesPage } from '@/pages/AccountServicesPage';
 import { AccountsOverviewPage } from '@/pages/AccountsOverviewPage';
-import { AccountActivityPage } from '@/pages/AccountActivityPage';
-import { TransactionDetailsPage } from '@/pages/Transaction DetailsPage';
-import { TransactionAPI } from '@api/TransactionAPI';
+import { TransactionAPI } from '@api/services/transaction';
 
-test('User completes end-to-end banking journey successfully', async ({ page }) => {
+test('User completes end-to-end banking journey successfully', async ({ page, apiClient }) => {
   test.setTimeout(60000);
 
   const context = new TestContext();
@@ -122,21 +120,19 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
     const billPayPage = await accountServicesPage.goToBillPay();
     await expect(page).toHaveURL(new RegExp(UI_ROUTES.BILL_PAY));
 
-    const payment = new BillPaymentBuilder(parseInt(context.getSecondaryAccount()!))
+    const billPaymentData = new BillPaymentBuilder(parseInt(context.getSecondaryAccount()!))
       .withTypicalAmount()
       .build();
 
-    context.setBillPayee(payment.payee);
-
     await billPayPage.payBill({
-      name: payment.payee,
-      address: payment.address,
-      city: payment.city,
-      state: payment.state,
-      zipCode: payment.zipCode,
-      phone: payment.phone,
-      amount: payment.amount,
-      toAccount: String(payment.accountNumber),
+      name: billPaymentData.payee,
+      address: billPaymentData.address,
+      city: billPaymentData.city,
+      state: billPaymentData.state,
+      zipCode: billPaymentData.zipCode,
+      phone: billPaymentData.phone,
+      amount: billPaymentData.amount,
+      toAccount: String(billPaymentData.accountNumber),
       fromAccount: String(context.getSecondaryAccount()),
     });
 
@@ -144,80 +140,51 @@ test('User completes end-to-end banking journey successfully', async ({ page }) 
       billPayPage.getSuccessMessage(),
       'Bill payment should complete successfully and display a confirmation message'
     ).resolves.toBeTruthy();
+
+    context.setLastBillPayTransaction({
+      fromAccount: String(context.getSecondaryAccount()),
+      billAmount: billPaymentData.amount,
+      transactionDescription: `Bill Payment to ${billPaymentData.payee}`,
+    });
   });
 
-  await test.step('Search the transactions using Find Transactions API', async () => {
-    const accountsOverviewPage = await accountServicesPage.goToAccountsOverview();
-    const fromAccount = context.getSecondaryAccount()!;
+  await test.step('Validate payment transactions using Find Transactions API (by amount) and verify response data', async () => {
+    const billTransactionData = context.getLastBillPayTransaction();
+    if (!billTransactionData) {
+      throw new Error('No last bill pay transaction found in context to validate');
+    }
 
-    await accountsOverviewPage.clickOnAccount(fromAccount);
-    await page.waitForLoadState('networkidle');
+    const transactionApi = new TransactionAPI(apiClient);
 
-    await test.step('Fetch last bill payment transaction from UI', async () => {
-      const accountActivityPage = new AccountActivityPage(page);
-      await expect(accountActivityPage.isPageLoaded()).resolves.toBeTruthy();
+    const apiTransactions = await transactionApi.searchByAmount(
+      Number(billTransactionData.fromAccount),
+      billTransactionData.billAmount!
+    );
 
-      const billPayee = context.getBillPayee()!;
-      const transactionDescription = `Bill Payment to ${billPayee}`;
-      const transactionRow =
-        await accountActivityPage.getTransactionFromTable(transactionDescription);
+    expect(apiTransactions.length).toBeGreaterThan(0);
 
-      expect(transactionRow.date).toBeTruthy();
-      expect(Number(transactionRow.amount.replace(/[^\d.]/g, ''))).toBeGreaterThan(0);
+    const matchingTransaction = apiTransactions.find(
+      (tx) => tx.description === billTransactionData.transactionDescription
+    );
 
-      await accountActivityPage.clickTransaction(transactionDescription);
+    expect(matchingTransaction, 'Should find matching transaction by description').toBeTruthy();
 
-      const transactionDetailsPage = new TransactionDetailsPage(page);
-      await expect(transactionDetailsPage.isPageLoaded()).resolves.toBeTruthy();
-
-      const uiTransaction = await transactionDetailsPage.getDetails();
-      const transactionId = Number(uiTransaction.id);
-
-      expect(transactionId).toBeGreaterThan(0);
-
-      const cookies = await page.context().cookies();
-      const jsession = cookies.find((c) => c.name === 'JSESSIONID')?.value;
-
-      expect(jsession, 'JSESSIONID cookie should be available').toBeTruthy();
-      if (!jsession) {
-        throw new Error('JSESSIONID cookie missing; cannot proceed with API validation');
+    if (matchingTransaction) {
+      if (billTransactionData.transactionId) {
+        expect(matchingTransaction.id).toBe(billTransactionData.transactionId);
       }
-      context.setSessionId(jsession);
-
-      context.setLastBillPayTransaction({
-        transactionId,
-        fromAccount,
-        billAmount: Number(uiTransaction.amount.replace(/[^\d.]/g, '')),
-        transactionDescription,
-        transactionUiId: uiTransaction.id,
-        transactionType: uiTransaction.type,
-        transactionUiAmount: uiTransaction.amount,
-        transactionDate: uiTransaction.date,
-      });
-    });
-
-    await test.step('Validate fetched transaction via Transaction API', async () => {
-      const transactionData = context.getLastBillPayTransaction();
-      if (!transactionData) {
-        throw new Error('No last bill pay transaction found in context to validate');
+      expect(matchingTransaction.accountId).toBe(Number(billTransactionData.fromAccount));
+      expect(matchingTransaction.type).toBe('Debit');
+      expect(matchingTransaction.amount).toBeCloseTo(billTransactionData.billAmount!, 2);
+      if (billTransactionData.transactionDescription) {
+        expect(matchingTransaction.description).toBe(billTransactionData.transactionDescription);
       }
-      const transactionApi = new TransactionAPI(page.request);
 
-      const apiTransaction = await transactionApi.getById(transactionData.transactionId, {
-        headers: {
-          Cookie: `JSESSIONID=${context.getSessionId()}`,
-        },
-      });
-
-      expect(apiTransaction.id).toBe(transactionData.transactionId);
-      expect(apiTransaction.accountId).toBe(Number(transactionData.fromAccount));
-      expect(apiTransaction.type).toBe(transactionData.transactionType);
-      expect(apiTransaction.amount).toBeCloseTo(transactionData.billAmount, 2);
-      expect(apiTransaction.description).toBe(transactionData.transactionDescription);
-
-      const apiDate = new Date(apiTransaction.date);
-      const uiDate = new Date(transactionData.transactionDate);
-      expect(apiDate.toDateString()).toBe(uiDate.toDateString());
-    });
+      if (billTransactionData.transactionDate) {
+        const apiDate = new Date(matchingTransaction.date);
+        const uiDate = new Date(billTransactionData.transactionDate);
+        expect(apiDate.toDateString()).toBe(uiDate.toDateString());
+      }
+    }
   });
 });

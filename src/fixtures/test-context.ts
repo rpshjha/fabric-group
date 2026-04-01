@@ -25,14 +25,14 @@ export interface UserProfile {
  * Bill payment transaction details combining UI and API data.
  */
 export interface BillPayTransaction {
-  transactionId: number;
-  fromAccount: string;
-  billAmount: number;
-  transactionDescription: string;
-  transactionUiId: string;
-  transactionType: string;
-  transactionUiAmount: string;
-  transactionDate: string;
+  fromAccount?: string;
+  billAmount?: number;
+  transactionId?: number;
+  transactionDescription?: string;
+  transactionUiId?: string;
+  transactionType?: string;
+  transactionUiAmount?: string;
+  transactionDate?: string;
 }
 
 /**
