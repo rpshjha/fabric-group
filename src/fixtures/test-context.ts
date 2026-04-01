@@ -4,107 +4,155 @@ export type Account = {
   id: string;
   type: AccountType;
 };
+
+/**
+ * User profile information for test context.
+ */
+export interface UserProfile {
+  username: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  ssn: string;
+}
+
+/**
+ * Bill payment transaction details combining UI and API data.
+ */
+export interface BillPayTransaction {
+  transactionId: number;
+  fromAccount: string;
+  billAmount: number;
+  transactionDescription: string;
+  transactionUiId: string;
+  transactionType: string;
+  transactionUiAmount: string;
+  transactionDate: string;
+}
+
+/**
+ * Fund transfer operation state.
+ */
+export interface FundTransferState {
+  lastTransferAmount?: number;
+}
+
+/**
+ * Bill payment operation state.
+ */
+export interface BillPayState {
+  billPayee?: string;
+  lastTransaction?: BillPayTransaction;
+}
+
 export interface TestContextData {
-  user?: {
-    username: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
-    ssn: string;
-  };
+  user?: UserProfile;
   accounts?: Account[];
-  transactions?: {
-    lastTransferAmount?: number;
-    lastBillAmount?: number;
-    billPayee?: string;
-    transactions?: any[];
-    transactionId?: number;
-  };
+  sessionId?: string;
+  fundTransfer?: FundTransferState;
+  billPay?: BillPayState;
 }
 
 export class TestContext {
   private data: TestContextData = {
     accounts: [],
-    transactions: {},
+    fundTransfer: {},
+    billPay: {},
   };
 
-  setUser(user: TestContextData['user']): void {
+  private ensureFundTransfer(): FundTransferState {
+    if (!this.data.fundTransfer) {
+      this.data.fundTransfer = {};
+    }
+    return this.data.fundTransfer;
+  }
+
+  private ensureBillPay(): BillPayState {
+    if (!this.data.billPay) {
+      this.data.billPay = {};
+    }
+    return this.data.billPay;
+  }
+
+  /** Set the current test user profile. */
+  setUser(user: UserProfile): void {
     this.data.user = user;
   }
 
-  getUser() {
+  /** Get the current test user profile. */
+  getUser(): UserProfile | undefined {
     return this.data.user;
   }
 
+  /** Set the session ID (JSESSIONID). */
+  setSessionId(jsessionId: string): void {
+    this.data.sessionId = jsessionId;
+  }
+
+  /** Get the stored session ID (JSESSIONID). */
+  getSessionId(): string | undefined {
+    return this.data.sessionId;
+  }
+
+  /** Add an account to the test context. */
   addAccount(accountId: string, type: AccountType = 'SAVINGS'): void {
     if (!this.data.accounts) this.data.accounts = [];
     this.data.accounts.push({ id: accountId, type });
   }
 
+  /** Get the primary (first) account. */
   getPrimaryAccount(): string | undefined {
     return this.data.accounts?.[0]?.id;
   }
 
+  /** Get the secondary (second) account. */
   getSecondaryAccount(): string | undefined {
     return this.data.accounts?.[1]?.id;
   }
 
+  /** Set the last transfer amount for fund transfer operations. */
   setLastTransferAmount(amount: number): void {
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions.lastTransferAmount = amount;
+    this.ensureFundTransfer().lastTransferAmount = amount;
   }
 
+  /** Get the last transfer amount. */
   getLastTransferAmount(): number | undefined {
-    return this.data.transactions?.lastTransferAmount;
+    return this.data.fundTransfer?.lastTransferAmount;
   }
 
-  setLastBillAmount(amount: number): void {
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions.lastBillAmount = amount;
-  }
-
-  getLastBillAmount(): number | undefined {
-    return this.data.transactions?.lastBillAmount;
-  }
-
+  /** Set the bill payee name. */
   setBillPayee(payee: string): void {
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions.billPayee = payee;
+    this.ensureBillPay().billPayee = payee;
   }
 
+  /** Get the bill payee name. */
   getBillPayee(): string | undefined {
-    return this.data.transactions?.billPayee;
+    return this.data.billPay?.billPayee;
   }
 
-  setTransactions(transactions: any[]): void {
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions.transactions = transactions;
+  /** Store bill payment transaction details for validation. */
+  setLastBillPayTransaction(transaction: BillPayTransaction): void {
+    this.ensureBillPay().lastTransaction = transaction;
   }
 
-  getTransactions(): any[] | undefined {
-    return this.data.transactions?.transactions;
+  /** Retrieve stored bill payment transaction details. */
+  getLastBillPayTransaction(): BillPayTransaction | undefined {
+    return this.data.billPay?.lastTransaction;
   }
 
-  setTransactionId(transactionId: number): void {
-    if (!this.data.transactions) this.data.transactions = {};
-    this.data.transactions.transactionId = transactionId;
-  }
-
-  getTransactionId(): number | undefined {
-    return this.data.transactions?.transactionId;
-  }
-
+  /** Get all stored context data. */
   getAllData(): TestContextData {
     return this.data;
   }
 
+  /** Clear all stored context data. */
   clear(): void {
-    this.data = { accounts: [], transactions: {} };
+    this.data = { accounts: [], sessionId: undefined, fundTransfer: {}, billPay: {} };
   }
 
   get accountId(): string | undefined {
@@ -112,14 +160,6 @@ export class TestContext {
   }
 
   get billAmount(): number | undefined {
-    return this.getLastBillAmount();
-  }
-
-  get transactions(): any[] | undefined {
-    return this.getTransactions();
-  }
-
-  set transactions(value: any[]) {
-    this.setTransactions(value);
+    return this.getLastBillPayTransaction()?.billAmount;
   }
 }
