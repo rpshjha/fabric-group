@@ -51,6 +51,7 @@ export interface BillPaymentData {
   phone: string;
   amount: number;
   accountId: number;
+  accountNumber: string;
 }
 
 export function seedFaker(seed?: number): void {

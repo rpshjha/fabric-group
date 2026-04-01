@@ -154,12 +154,4 @@ export class TestContext {
   clear(): void {
     this.data = { accounts: [], sessionId: undefined, fundTransfer: {}, billPay: {} };
   }
-
-  get accountId(): string | undefined {
-    return this.getPrimaryAccount();
-  }
-
-  get billAmount(): number | undefined {
-    return this.getLastBillPayTransaction()?.billAmount;
-  }
 }
