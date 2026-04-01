@@ -104,8 +104,8 @@ export default defineConfig({
       slowMo,
     },
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'retain-on-failure',
+    video: 'on',
+    trace: 'on',
     actionTimeout: 10000,
   },
 
