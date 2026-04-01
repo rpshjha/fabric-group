@@ -1,1 +1,1 @@
-export { API_ENDPOINTS, UI_ROUTES } from './endpoints';
+export { UI_ROUTES } from './endpoints';

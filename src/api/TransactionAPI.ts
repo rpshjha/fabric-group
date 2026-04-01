@@ -1,58 +1,18 @@
 import { APIService } from './core/api-service';
-import type { TransactionList, Transaction } from './types/transaction.types';
+import type { Transaction } from './types/transaction.types';
 
 export class TransactionAPI extends APIService {
-  async getByAccountId(accountId: string): Promise<TransactionList> {
-    const res = await this.client.get<TransactionList>(`/transactions/${accountId}`);
-
-    if (res.status !== 200) {
-      throw new Error(
-        `Failed to fetch transactions for account ${accountId}. Status: ${res.status}`
-      );
-    }
-
-    if (!Array.isArray(res.data)) {
-      throw new Error('Invalid transaction data structure received from API');
-    }
-
-    return res.data;
-  }
-
-  async searchByAmount(
-    accountId: string,
-    amount: number,
-    options: { headers?: Record<string, string> } = {}
-  ): Promise<TransactionList> {
-    const searchEndpoint = `/parabank/services/bank/accounts/${accountId}/transactions/search`;
-
-    const res = await this.client.get<TransactionList>(searchEndpoint, {
-      headers: options.headers,
-      queryParams: { amount: amount.toString() },
-    });
-
-    if (res.status !== 200) {
-      throw new Error(
-        `Failed to search transactions for account ${accountId} with amount ${amount}. Status: ${res.status}`
-      );
-    }
-
-    if (!Array.isArray(res.data)) {
-      throw new Error('Invalid transaction search data structure received from API');
-    }
-
-    return res.data;
-  }
+  private readonly endpoints = {
+    byId: (id: number) => `/parabank/services_proxy/bank/transactions/${id}`,
+  };
 
   async getById(
     transactionId: number,
     options: { headers?: Record<string, string> } = {}
   ): Promise<Transaction> {
-    const res = await this.client.get<Transaction>(
-      `/parabank/services_proxy/bank/transactions/${transactionId}`,
-      {
-        headers: options.headers,
-      }
-    );
+    const res = await this.client.get<Transaction>(this.endpoints.byId(transactionId), {
+      headers: options.headers,
+    });
 
     if (res.status !== 200) {
       throw new Error(`Failed to fetch transaction ${transactionId}. Status: ${res.status}`);
@@ -62,6 +22,6 @@ export class TransactionAPI extends APIService {
       throw new Error('Invalid transaction data structure received from API');
     }
 
-    return res.data;
+    return res.data as Transaction;
   }
 }
