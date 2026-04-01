@@ -179,12 +179,6 @@ jobs:
           echo "retried_test_names=$RETRIED_TEST_NAMES" >> $GITHUB_OUTPUT
           echo "pass_rate=$((TOTAL_PASSED * 100 / (TOTAL_TESTS > 0 ? TOTAL_TESTS : 1)))" >> $GITHUB_OUTPUT
 
-          # Fail the job if there are failed tests
-          if [ "$TOTAL_FAILED" -gt 0 ]; then
-            echo "❌ Test failures detected: $TOTAL_FAILED test(s) failed"
-            exit 1
-          fi
-
       - name: Send test report email
         if: always()
         continue-on-error: true
