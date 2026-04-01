@@ -206,43 +206,41 @@ jobs:
             test-artifacts/**/*.webm
             test-artifacts/**/*.trace
 
-          content_type: text/html
-
           html_body: |
             <html>
             <body style="font-family: Arial, sans-serif; padding:20px; background-color:#f9f9f9; color:#333;">
 
               <h2 style="color:#2c3e50;">Playwright Test Report</h2>
 
-              <table style="border-collapse: collapse; width: 100%;">
+              <table style="border-collapse: collapse; width: auto; min-width: 400px;">
                 <tr>
-                  <th style="border:1px solid #ddd; padding:8px;">Metric</th>
-                  <th style="border:1px solid #ddd; padding:8px;">Value</th>
+                  <th style="border:1px solid #ddd; padding:8px;">Test Summary</th>
+                  <th style="border:1px solid #ddd; padding:8px;">Result</th>
                 </tr>
                 <tr>
                   <td style="border:1px solid #ddd; padding:8px;">Total Tests</td>
                   <td style="border:1px solid #ddd; padding:8px;">${{ steps.parse_results.outputs.total_tests }}</td>
                 </tr>
                 <tr>
-                  <td style="border:1px solid #ddd; padding:8px;">✅ Passed</td>
+                  <td style="border:1px solid #ddd; padding:8px;">Tests Passed</td>
                   <td style="border:1px solid #ddd; padding:8px; color:green;">
                     ${{ steps.parse_results.outputs.passed }}
                   </td>
                 </tr>
                 <tr>
-                  <td style="border:1px solid #ddd; padding:8px;">❌ Failed</td>
+                  <td style="border:1px solid #ddd; padding:8px;">Tests Failed</td>
                   <td style="border:1px solid #ddd; padding:8px; color:red;">
                     ${{ steps.parse_results.outputs.failed }}
                   </td>
                 </tr>
                 <tr>
-                  <td style="border:1px solid #ddd; padding:8px;">Retry Attempts</td>
+                  <td style="border:1px solid #ddd; padding:8px;">Total Retries</td>
                   <td style="border:1px solid #ddd; padding:8px;">
                     ${{ steps.parse_results.outputs.retries || '0' }}
                   </td>
                 </tr>
                 <tr>
-                  <td style="border:1px solid #ddd; padding:8px;">Retried Tests</td>
+                  <td style="border:1px solid #ddd; padding:8px;">Tests Retried</td>
                   <td style="border:1px solid #ddd; padding:8px;">
                     ${{ steps.parse_results.outputs.retried_tests || '0' }}
                   </td>
