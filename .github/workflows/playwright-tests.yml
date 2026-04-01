@@ -263,7 +263,7 @@ jobs:
 
               <br/>
 
-              <h3 style="margin-top:20px;>Status:
+              <h3 style="margin-top:20px;">Status:
                 <span style="color:${{ (steps.parse_results.outputs.failed || '0') > 0 && 'red' || 'green' }}">
                   ${{ (steps.parse_results.outputs.failed || '0') > 0 && 'FAILED ❌' || 'PASSED ✅' }}
                 </span>
