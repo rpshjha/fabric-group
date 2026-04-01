@@ -208,7 +208,7 @@ jobs:
 
           content_type: text/html
 
-          body: |
+          bhtml_body: |
             <html>
             <body style="font-family: Arial, sans-serif; padding:20px; background-color:#f9f9f9; color:#333;">
 
