@@ -73,7 +73,6 @@ jobs:
 
       - name: Run Playwright tests - ${{ env.BROWSER }}
         run: npx playwright test --project=${{ env.BROWSER }}
-        continue-on-error: true
 
       - name: Upload HTML report
         if: always()
@@ -120,7 +119,6 @@ jobs:
 
       - name: Download all test artifacts
         if: always()
-        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           path: test-artifacts
@@ -132,7 +130,6 @@ jobs:
       - name: Parse test results
         id: parse_results
         if: always()
-        continue-on-error: true
         run: |
           # Parse results from all browsers
           TOTAL_TESTS=0
@@ -182,8 +179,15 @@ jobs:
           echo "retried_test_names=$RETRIED_TEST_NAMES" >> $GITHUB_OUTPUT
           echo "pass_rate=$((TOTAL_PASSED * 100 / (TOTAL_TESTS > 0 ? TOTAL_TESTS : 1)))" >> $GITHUB_OUTPUT
 
+          # Fail the job if there are failed tests
+          if [ "$TOTAL_FAILED" -gt 0 ]; then
+            echo "❌ Test failures detected: $TOTAL_FAILED test(s) failed"
+            exit 1
+          fi
+
       - name: Send test report email
         if: always()
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
