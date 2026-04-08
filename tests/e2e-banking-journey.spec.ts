@@ -1,8 +1,9 @@
-import { createTestUser, getRandomTransferAmount, BillPaymentBuilder } from '@utils/test-data';
+import { test, expect } from '@/fixtures';
 import { UI_ROUTES } from '@constants/endpoints';
 import { AccountServicesPage, AccountsOverviewPage, LoginPage, RegistrationPage } from '@/pages';
 import { TransactionAPI } from '@api/services';
-import { test, expect } from '@/fixtures';
+import { generateBillPaymentData, generateUserRegistrationData } from '@/test-data';
+import { generateRandomAmount } from '@/utils/data-utils';
 
 test('User completes end-to-end banking journey successfully', async ({
   page,
@@ -11,7 +12,7 @@ test('User completes end-to-end banking journey successfully', async ({
 }) => {
   test.setTimeout(60000);
 
-  const user = createTestUser();
+  const user = generateUserRegistrationData();
   testContext.setUser(user);
 
   const registrationPage = new RegistrationPage(page);
@@ -113,7 +114,7 @@ test('User completes end-to-end banking journey successfully', async ({
       new RegExp(UI_ROUTES.TRANSFER_FUNDS)
     );
 
-    const amount = getRandomTransferAmount(100, 300);
+    const amount = generateRandomAmount(100, 300);
     testContext.setLastTransferAmount(amount);
 
     await transferFundsPage.transferFunds(
@@ -134,32 +135,20 @@ test('User completes end-to-end banking journey successfully', async ({
       new RegExp(UI_ROUTES.BILL_PAY)
     );
 
-    const billPaymentData = new BillPaymentBuilder(parseInt(testContext.getSecondaryAccount()))
-      .withTypicalAmount()
-      .build();
-
-    await billPayPage.payBill({
-      name: billPaymentData.payee,
-      address: billPaymentData.address,
-      city: billPaymentData.city,
-      state: billPaymentData.state,
-      zipCode: billPaymentData.zipCode,
-      phone: billPaymentData.phone,
-      amount: billPaymentData.amount,
-      toAccount: String(billPaymentData.accountNumber),
+    const accountId = parseInt(testContext.getSecondaryAccount());
+    const billPaymentData = generateBillPaymentData(accountId);
+    testContext.setLastBillPayTransaction({
       fromAccount: String(testContext.getSecondaryAccount()),
+      billAmount: billPaymentData.amount,
+      transactionDescription: `Bill Payment to ${billPaymentData.name}`,
     });
+
+    await billPayPage.payBill(billPaymentData);
 
     await expect(
       billPayPage.getSuccessMessage(),
       'Bill payment should complete successfully and display a confirmation message'
     ).resolves.toBeTruthy();
-
-    testContext.setLastBillPayTransaction({
-      fromAccount: String(testContext.getSecondaryAccount()),
-      billAmount: billPaymentData.amount,
-      transactionDescription: `Bill Payment to ${billPaymentData.payee}`,
-    });
   });
 
   await test.step('Validate payment transactions using Find Transactions API (by amount) and verify response data', async () => {

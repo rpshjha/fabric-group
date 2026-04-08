@@ -30,15 +30,15 @@ export interface TransferData {
 }
 
 export interface BillPaymentData {
-  payee: string;
+  name: string;
   address: string;
   city: string;
   state: string;
   zipCode: string;
   phone: string;
   amount: number;
-  accountId: number;
-  accountNumber: string;
+  toAccount: string;
+  fromAccount: string;
 }
 
 export interface BillPayTransaction {

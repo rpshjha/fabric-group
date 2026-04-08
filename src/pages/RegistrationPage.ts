@@ -2,6 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 import { UI_ROUTES } from '@constants/endpoints';
 import { AccountServicesPage } from './AccountServicesPage';
+import { UserRegistrationData } from '@/models';
 
 export class RegistrationPage extends BasePage {
   private readonly firstNameInput: Locator;
@@ -43,18 +44,7 @@ export class RegistrationPage extends BasePage {
     await this.navigateToPath(UI_ROUTES.REGISTER);
   }
 
-  public async registerUser(userData: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
-    ssn: string;
-    username: string;
-    password: string;
-  }): Promise<AccountServicesPage> {
+  public async registerUser(userData: UserRegistrationData): Promise<AccountServicesPage> {
     await this.firstNameInput.fill(userData.firstName);
     await this.lastNameInput.fill(userData.lastName);
     await this.addressInput.fill(userData.address);

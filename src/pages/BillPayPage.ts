@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 import { UI_ROUTES } from '@constants/endpoints';
+import { BillPaymentData } from '@/models/user.model';
 
 export class BillPayPage extends BasePage {
   private readonly payeeNameInput: Locator;
@@ -54,32 +55,19 @@ export class BillPayPage extends BasePage {
     await this.navigateToPath(UI_ROUTES.BILL_PAY);
   }
 
-  public async payBill(payeeData: {
-    name: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
-    amount: number;
-    toAccount: string;
-    fromAccount: string;
-  }): Promise<void> {
+  public async payBill(payeeData: BillPaymentData): Promise<void> {
     await this.payeeNameInput.fill(payeeData.name);
     await this.payeeAddressInput.fill(payeeData.address);
     await this.payeeCityInput.fill(payeeData.city);
     await this.payeeStateInput.fill(payeeData.state);
     await this.payeeZipInput.fill(payeeData.zipCode);
     await this.payeePhoneInput.fill(payeeData.phone);
-
-    await this.accountNumberInput.fill(payeeData.toAccount);
-    await this.verifyAccountInput.fill(payeeData.toAccount);
-
+    await this.accountNumberInput.fill(payeeData.toAccount.toString());
+    await this.verifyAccountInput.fill(payeeData.toAccount.toString());
     await this.amountInput.fill(payeeData.amount.toString());
     await this.fromAccountSelect.selectOption(payeeData.fromAccount);
 
     await this.payButton.click();
-
     await this.confirmationMessage.waitFor({ state: 'visible' });
   }
 

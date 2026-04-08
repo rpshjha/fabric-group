@@ -26,7 +26,7 @@
       "@/*": ["src/*"],
       "@pages/*": ["src/pages/*"],
       "@api/*": ["src/api/*"],
-      "@utils/*": ["src/utils/*"],
+      "@utils/*": ["src/test-data/*"],
       "@fixtures/*": ["src/fixtures/*"],
       "@constants/*": ["src/constants/*"]
     }
