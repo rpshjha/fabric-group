@@ -17,9 +17,4 @@ export { generateUniqueTestUser, generateRandomAmount };
 
 export { BillPaymentBuilder } from './test-data-builder';
 
-export type {
-  UserRegistrationData,
-  TestUser,
-  TransferData,
-  BillPaymentData,
-} from './test-data-generator';
+export type {} from './test-data-generator';

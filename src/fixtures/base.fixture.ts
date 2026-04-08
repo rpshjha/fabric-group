@@ -1,33 +1,28 @@
-import { test as base, Page, APIRequestContext } from '@playwright/test';
-import { TestContext } from './test-context';
-
-export interface TestContextFixture {
-  testId: string;
-  createdResources: string[];
-}
+import { test as base, APIRequestContext } from '@playwright/test';
+import { TestContext } from '@/context';
+import { APIClient } from '@/api/core/api-client';
 
 export const test = base.extend<{
   testContext: TestContext;
-  authenticatedPage: Page;
-  apiContext: APIRequestContext;
+  apiRequestContext: APIRequestContext;
+  apiClient: APIClient;
 }>({
   // eslint-disable-next-line no-empty-pattern
   testContext: async ({}, use): Promise<void> => {
     const testContext = new TestContext();
-
     await use(testContext);
-
     testContext.clear();
   },
 
-  authenticatedPage: async ({ page }, use): Promise<void> => {
-    await use(page);
+  apiRequestContext: async ({ playwright }, use): Promise<void> => {
+    const apiRequestContext = await playwright.request.newContext();
+    await use(apiRequestContext);
+    await apiRequestContext.dispose();
   },
 
-  apiContext: async ({ playwright }, use): Promise<void> => {
-    const apiContext = await playwright.request.newContext();
-    await use(apiContext);
-    await apiContext.dispose();
+  apiClient: async ({ apiRequestContext }, use) => {
+    const client = new APIClient(apiRequestContext);
+    await use(client);
   },
 });
 
