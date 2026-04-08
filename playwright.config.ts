@@ -11,7 +11,7 @@ const slowMo = process.env.CI ? 0 : process.env.SLOW_MO ? parseInt(process.env.S
 
 const timeout = parseInt(process.env.TIMEOUT || '60000', 10);
 const expectTimeout = parseInt(process.env.EXPECT_TIMEOUT || '5000', 10);
-const retries = process.env.RETRIES ? parseInt(process.env.RETRIES, 10) : 1;
+const retries = process.env.RETRIES ? parseInt(process.env.RETRIES, 10) : 2;
 
 const viewportWidth = process.env.VIEWPORT_WIDTH
   ? parseInt(process.env.VIEWPORT_WIDTH, 10)
@@ -74,7 +74,7 @@ export default defineConfig({
 
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : retries,
+  retries: process.env.CI ? retries : 0,
   workers: process.env.CI ? 2 : undefined,
 
   timeout,
