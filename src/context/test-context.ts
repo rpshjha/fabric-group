@@ -1,57 +1,4 @@
-export type AccountType = 'SAVINGS' | 'CHECKING';
-
-export type Account = {
-  id: string;
-  type: AccountType;
-};
-
-/**
- * User profile information for test context.
- */
-export interface UserProfile {
-  username: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  phone: string;
-  ssn: string;
-}
-
-/**
- * Bill payment transaction details combining UI and API data.
- */
-export interface BillPayTransaction {
-  fromAccount?: string;
-  billAmount?: number;
-  transactionId?: number;
-  transactionDescription?: string;
-  transactionDate?: string;
-}
-
-/**
- * Fund transfer operation state.
- */
-export interface FundTransferState {
-  lastTransferAmount?: number;
-}
-
-/**
- * Bill payment operation state.
- */
-export interface BillPayState {
-  lastTransaction?: BillPayTransaction;
-}
-
-export interface TestContextData {
-  user?: UserProfile;
-  accounts: Account[];
-  fundTransfer: FundTransferState;
-  billPay: BillPayState;
-}
+import { AccountType, BillPayTransaction, TestContextData, UserRegistrationData } from '@/models';
 
 export class TestContext {
   private data: TestContextData = {
@@ -60,7 +7,7 @@ export class TestContext {
     billPay: {},
   };
 
-  setUser(user: UserProfile): void {
+  setUser(user: UserRegistrationData): void {
     this.data.user = user;
   }
 

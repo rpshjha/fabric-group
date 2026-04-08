@@ -1,3 +1,4 @@
+import { TestUser, UserRegistrationData } from '@/models';
 import { faker as baseFaker, allFakers } from '@faker-js/faker';
 
 function getFakerInstance() {
@@ -6,45 +7,6 @@ function getFakerInstance() {
 }
 
 const faker = getFakerInstance();
-
-export interface UserRegistrationData {
-  firstName: string;
-  lastName: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  phone: string;
-  ssn: string;
-  username: string;
-  password: string;
-}
-
-export interface TestUser {
-  username: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface TransferData {
-  fromAccountId: number;
-  toAccountId: number;
-  amount: number;
-  description?: string;
-}
-
-export interface BillPaymentData {
-  payee: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  phone: string;
-  amount: number;
-  accountId: number;
-  accountNumber: string;
-}
 
 function generateAddress() {
   return {

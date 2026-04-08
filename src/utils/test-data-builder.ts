@@ -1,4 +1,5 @@
-import { generateBillAmount, generatePayeeData, BillPaymentData } from './test-data-generator';
+import { BillPaymentData } from '@/models';
+import { generateBillAmount, generatePayeeData } from './test-data-generator';
 
 export class BillPaymentBuilder {
   private payeeData = generatePayeeData();

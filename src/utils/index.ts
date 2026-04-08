@@ -1,1 +1,1 @@
-export { generateUniqueTestUser, generateRandomAmount, type TestUser } from './test-data-generator';
+export { generateUniqueTestUser, generateRandomAmount } from './test-data-generator';
