@@ -1,3 +1,9 @@
+export type AccountType = 'SAVINGS' | 'CHECKING';
+
+export type Account = {
+  id: string;
+  type: AccountType;
+};
 export interface UserRegistrationData {
   firstName: string;
   lastName: string;
@@ -11,12 +17,10 @@ export interface UserRegistrationData {
   password: string;
 }
 
-export interface TestUser {
-  username: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+export type TestUser = Pick<
+  UserRegistrationData,
+  'username' | 'password' | 'firstName' | 'lastName'
+>;
 
 export interface TransferData {
   fromAccountId: number;
@@ -36,11 +40,6 @@ export interface BillPaymentData {
   accountId: number;
   accountNumber: string;
 }
-
-export type Account = {
-  id: string;
-  type: AccountType;
-};
 
 export interface BillPayTransaction {
   fromAccount?: string;
@@ -64,5 +63,3 @@ export interface TestContextData {
   fundTransfer: FundTransferState;
   billPay: BillPayState;
 }
-
-export type AccountType = 'SAVINGS' | 'CHECKING';
