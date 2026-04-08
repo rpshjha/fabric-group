@@ -19,7 +19,6 @@ export class TransactionDetailsPage extends BasePage {
     const row = this.table.locator('tr', {
       has: this.page.locator('td b', { hasText: label }),
     });
-
     return (await row.locator('td').nth(1).textContent())?.trim() || '';
   }
 

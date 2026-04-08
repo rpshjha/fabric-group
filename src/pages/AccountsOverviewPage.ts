@@ -41,11 +41,8 @@ export class AccountsOverviewPage extends BasePage {
 
   public async getAllAccounts(): Promise<string[]> {
     const accountLinks = this.accountsTable.locator('tbody tr td:first-child a');
-
     await accountLinks.first().waitFor({ state: 'visible' });
-
     const accounts = await accountLinks.allTextContents();
-
     return accounts.map((a) => a.trim());
   }
 
