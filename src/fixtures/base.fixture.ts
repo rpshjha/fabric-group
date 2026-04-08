@@ -20,8 +20,8 @@ export const test = base.extend<{
     await apiRequestContext.dispose();
   },
 
-  apiClient: async ({ apiRequestContext }, use) => {
-    const client = new APIClient(apiRequestContext);
+  apiClient: async ({ page }, use) => {
+    const client = new APIClient(page.request);
     await use(client);
   },
 });
