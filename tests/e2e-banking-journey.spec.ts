@@ -15,8 +15,8 @@ test('User completes end-to-end banking journey successfully', async ({
   testContext.setUser(user);
 
   const registrationPage = new RegistrationPage(page);
-  const loginPage = new LoginPage(page);
 
+  let loginPage: LoginPage;
   let accountServicesPage: AccountServicesPage;
   let accountsOverviewPage: AccountsOverviewPage;
   let newSavingsAccountId: string;
@@ -38,7 +38,7 @@ test('User completes end-to-end banking journey successfully', async ({
   });
 
   await test.step('User logs in to the application', async () => {
-    await accountServicesPage.logoutUser();
+    loginPage = await accountServicesPage.logoutUser();
 
     await loginPage.navigateToLoginPage();
     accountsOverviewPage = await loginPage.login(user.username, user.password);
@@ -47,14 +47,17 @@ test('User completes end-to-end banking journey successfully', async ({
       page,
       'User should land on Accounts Overview page after successful login'
     ).toHaveURL(new RegExp(UI_ROUTES.ACCOUNTS_OVERVIEW));
-    await expect(accountServicesPage.getWelcomeMessage()).resolves.toContain(user.firstName);
+    await expect(
+      accountServicesPage.getWelcomeMessage(),
+      'Welcome message should contain user first name after login'
+    ).resolves.toContain(user.firstName);
 
-    let accountsOverview = await accountsOverviewPage.getAllAccounts();
+    let accounts = await accountsOverviewPage.getAllAccounts();
     expect(
-      accountsOverview.length,
+      accounts.length,
       'User should have at least one account after successful login'
     ).toBeGreaterThan(0);
-    accountsOverview.forEach((account) => testContext.addAccount(account));
+    accounts.forEach((account) => testContext.addAccount(account));
   });
 
   await test.step('User verifies global navigation menu', async () => {
@@ -70,11 +73,13 @@ test('User completes end-to-end banking journey successfully', async ({
 
   await test.step('User opens a new savings account', async () => {
     const openNewAccountPage = await accountServicesPage.goToOpenNewAccount();
-    await expect(page).toHaveURL(new RegExp(UI_ROUTES.OPEN_ACCOUNT));
+    await expect(page, 'User should be navigated to Open Account page').toHaveURL(
+      new RegExp(UI_ROUTES.OPEN_ACCOUNT)
+    );
 
     newSavingsAccountId = await openNewAccountPage.openNewAccount(
       'SAVINGS',
-      testContext.getPrimaryAccount()!
+      testContext.getPrimaryAccount()
     );
 
     testContext.addAccount(newSavingsAccountId, 'SAVINGS');
@@ -88,7 +93,10 @@ test('User completes end-to-end banking journey successfully', async ({
     accountsOverviewPage = await accountServicesPage.goToAccountsOverview();
     const accounts = await accountsOverviewPage.getAllAccounts();
 
-    expect(accounts.length).toBeGreaterThan(0);
+    expect(
+      accounts.length,
+      'User should have at least one account in Accounts Overview'
+    ).toBeGreaterThan(0);
     accounts.forEach((account) => testContext.addAccount(account));
 
     for (const account of accounts) {
@@ -101,7 +109,9 @@ test('User completes end-to-end banking journey successfully', async ({
 
   await test.step('User transfers funds between accounts', async () => {
     const transferFundsPage = await accountServicesPage.goToTransferFunds();
-    await expect(page).toHaveURL(new RegExp(UI_ROUTES.TRANSFER_FUNDS));
+    await expect(page, 'User should be navigated to Transfer Funds page').toHaveURL(
+      new RegExp(UI_ROUTES.TRANSFER_FUNDS)
+    );
 
     const amount = getRandomTransferAmount(100, 300);
     testContext.setLastTransferAmount(amount);
@@ -120,9 +130,11 @@ test('User completes end-to-end banking journey successfully', async ({
 
   await test.step('User pays a bill successfully', async () => {
     const billPayPage = await accountServicesPage.goToBillPay();
-    await expect(page).toHaveURL(new RegExp(UI_ROUTES.BILL_PAY));
+    await expect(page, 'User should be navigated to Bill Pay page').toHaveURL(
+      new RegExp(UI_ROUTES.BILL_PAY)
+    );
 
-    const billPaymentData = new BillPaymentBuilder(parseInt(testContext.getSecondaryAccount()!))
+    const billPaymentData = new BillPaymentBuilder(parseInt(testContext.getSecondaryAccount()))
       .withTypicalAmount()
       .build();
 
@@ -163,7 +175,10 @@ test('User completes end-to-end banking journey successfully', async ({
       billTransactionData.billAmount!
     );
 
-    expect(apiTransactions.length).toBeGreaterThan(0);
+    expect(
+      apiTransactions.length,
+      'API should return at least one transaction for the given account and amount'
+    ).toBeGreaterThan(0);
 
     const matchingTransaction = apiTransactions.find(
       (tx) => tx.description === billTransactionData.transactionDescription
@@ -178,9 +193,6 @@ test('User completes end-to-end banking journey successfully', async ({
       expect(matchingTransaction.accountId).toBe(Number(billTransactionData.fromAccount));
       expect(matchingTransaction.type).toBe('Debit');
       expect(matchingTransaction.amount).toBeCloseTo(billTransactionData.billAmount!, 2);
-      if (billTransactionData.transactionDescription) {
-        expect(matchingTransaction.description).toBe(billTransactionData.transactionDescription);
-      }
 
       if (billTransactionData.transactionDate) {
         const apiDate = new Date(matchingTransaction.date);

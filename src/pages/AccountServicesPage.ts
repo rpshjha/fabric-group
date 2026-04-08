@@ -4,6 +4,7 @@ import { OpenNewAccountPage } from './OpenNewAccountPage';
 import { AccountsOverviewPage } from './AccountsOverviewPage';
 import { TransferFundsPage } from './TransferFundsPage';
 import { BillPayPage } from './BillPayPage';
+import { LoginPage } from './LoginPage';
 
 export class AccountServicesPage extends BasePage {
   private readonly menu: Locator;
@@ -73,8 +74,9 @@ export class AccountServicesPage extends BasePage {
     await this.requestLoanLink.click();
   }
 
-  public async logoutUser(): Promise<void> {
+  public async logoutUser(): Promise<LoginPage> {
     await this.logoutLink.click();
+    return new LoginPage(this.page);
   }
 
   public async goToHome(): Promise<void> {
