@@ -43,7 +43,7 @@ export class TransferFundsPage extends BasePage {
   }
 
   public async getConfirmationMessage(): Promise<string> {
-    await this.confirmationMessage.waitFor({ state: 'visible' }); // ✅ wait for result
+    await this.confirmationMessage.waitFor({ state: 'visible' });
 
     const text = await this.confirmationMessage.textContent();
     return text ?? '';
