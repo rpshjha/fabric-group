@@ -1,6 +1,12 @@
 import { test, expect } from '@/fixtures';
 import { UI_ROUTES } from '@constants/endpoints';
-import { AccountServicesPage, AccountsOverviewPage, LoginPage, RegistrationPage } from '@/pages';
+import {
+  AccountServicesPage,
+  AccountsOverviewPage,
+  ErrorPage,
+  LoginPage,
+  RegistrationPage,
+} from '@/pages';
 import { TransactionAPI } from '@api/services';
 import {
   generateBillPaymentData,
@@ -18,6 +24,7 @@ test('User completes end-to-end banking journey successfully', async ({
   const user = generateUserRegistrationData();
   testContext.setUser(user);
 
+  const errorPage = new ErrorPage(page);
   const registrationPage = new RegistrationPage(page);
 
   let loginPage: LoginPage;
@@ -46,6 +53,11 @@ test('User completes end-to-end banking journey successfully', async ({
 
     await loginPage.navigateToLoginPage();
     accountsOverviewPage = await loginPage.login(user.username, user.password);
+
+    if (await errorPage.isPageLoaded()) {
+      const errorMessage = await errorPage.getErrorMessage();
+      throw new Error(`Application error after login: ${errorMessage}`);
+    }
 
     await expect(
       page,

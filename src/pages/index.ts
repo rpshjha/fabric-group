@@ -6,3 +6,4 @@ export { OpenNewAccountPage } from './OpenNewAccountPage';
 export { TransferFundsPage } from './TransferFundsPage';
 export { BillPayPage } from './BillPayPage';
 export { AccountServicesPage } from './AccountServicesPage';
+export { ErrorPage } from './ErrorPage';
