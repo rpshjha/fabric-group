@@ -13,7 +13,7 @@ export const test = base.extend<{
     testContext.clear();
   },
 
-  apiClient: async ({ page }, use) => {
+  apiClient: async ({ page }, use): Promise<void> => {
     const client = new APIClient(page.request);
     await use(client);
   },

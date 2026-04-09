@@ -1,4 +1,4 @@
-import type { Transaction } from '../types/transaction.types';
+import { Transaction } from '@/models';
 
 export class TransactionValidator {
   static validate(data: unknown): Transaction {

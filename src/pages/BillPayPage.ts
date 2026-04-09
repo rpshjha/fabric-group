@@ -1,7 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 import { UI_ROUTES } from '@constants/endpoints';
-import { BillPaymentData } from '@/models/user.model';
+import { BillPaymentData } from '@/models';
 
 export class BillPayPage extends BasePage {
   private readonly payeeNameInput: Locator;

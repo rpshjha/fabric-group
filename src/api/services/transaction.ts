@@ -1,5 +1,5 @@
+import { Transaction } from '@/models';
 import { BaseAPI } from '../core/base-api';
-import type { Transaction } from '../types/transaction.types';
 import { TransactionValidator } from '../validators/transaction-validator';
 
 export class TransactionAPI extends BaseAPI {

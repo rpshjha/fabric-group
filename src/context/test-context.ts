@@ -1,4 +1,10 @@
-import { AccountType, BillPayTransaction, TestContextData, UserRegistrationData } from '@/models';
+import {
+  AccountType,
+  BillPayTransaction,
+  TestContextData,
+  TransferFundsTransaction,
+  UserRegistrationData,
+} from '@/models';
 
 export class TestContext {
   private data: TestContextData = {
@@ -11,24 +17,34 @@ export class TestContext {
     this.data.user = user;
   }
 
+  getUser(): UserRegistrationData | undefined {
+    return this.data.user;
+  }
+
   addAccount(accountId: string, type: AccountType = 'SAVINGS'): void {
     this.data.accounts.push({ id: accountId, type });
   }
 
-  getPrimaryAccount(): string {
-    const account = this.data.accounts[0]?.id;
-    if (!account) throw new Error('Primary account not found');
+  getAccountByIndex(index: number): string {
+    const account = this.data.accounts[index]?.id;
+    if (!account) throw new Error(`Account at index ${index} not found`);
     return account;
+  }
+
+  getPrimaryAccount(): string {
+    return this.getAccountByIndex(0);
   }
 
   getSecondaryAccount(): string {
-    const account = this.data.accounts[1]?.id;
-    if (!account) throw new Error('Secondary account not found');
-    return account;
+    return this.getAccountByIndex(1);
   }
 
-  setLastTransferAmount(amount: number): void {
-    this.data.fundTransfer.lastTransferAmount = amount;
+  setLastTransferFundsTransaction(transaction: TransferFundsTransaction): void {
+    this.data.fundTransfer.lastTransaction = transaction;
+  }
+
+  getLastTransferFundsTransaction(): TransferFundsTransaction | undefined {
+    return this.data.fundTransfer.lastTransaction;
   }
 
   setLastBillPayTransaction(transaction: BillPayTransaction): void {

@@ -1,10 +1,4 @@
-import { BillPaymentData, TestUser, UserRegistrationData } from '@/models/user.model';
-import {
-  generateAddress,
-  generatePhoneNumber,
-  generateRandomAmount,
-  generateUniqueId,
-} from '@/utils/data-utils';
+import { BillPaymentData, TestUser, UserRegistrationData } from '@/models';
 import { faker } from '@/utils/faker';
 
 export function generateUserRegistrationData(): UserRegistrationData {
@@ -25,7 +19,7 @@ export function generateUserRegistrationData(): UserRegistrationData {
   };
 }
 
-export function generateBillPaymentData(accountId: number): BillPaymentData {
+export function generateBillPaymentData(accountId: number, amount?: number): BillPaymentData {
   const payee = generatePayeeData();
 
   return {
@@ -35,7 +29,7 @@ export function generateBillPaymentData(accountId: number): BillPaymentData {
     state: payee.state,
     zipCode: payee.zipCode,
     phone: payee.phone,
-    amount: generateRandomAmount(50, 200),
+    amount: amount ?? generateRandomAmount(50, 200),
     toAccount: payee.accountNumber,
     fromAccount: accountId.toString(),
   };
@@ -78,4 +72,25 @@ function generatePayeeData() {
     phone: generatePhoneNumber(),
     accountNumber,
   };
+}
+
+export function generateAddress() {
+  return {
+    street: faker.location.streetAddress(),
+    city: faker.location.city(),
+    state: faker.location.state({ abbreviated: true }),
+    zipCode: faker.location.zipCode('#####'),
+  };
+}
+
+export function generatePhoneNumber(): string {
+  return faker.number.int({ min: 6000000000, max: 9999999999 }).toString();
+}
+
+export function generateUniqueId(): string {
+  return faker.number.int({ min: 100000000000, max: 999999999999 }).toString();
+}
+
+export function generateRandomAmount(min = 10, max = 2500): number {
+  return Math.round(faker.number.float({ min, max, multipleOf: 0.01 }) * 100) / 100;
 }

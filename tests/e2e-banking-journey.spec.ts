@@ -2,8 +2,11 @@ import { test, expect } from '@/fixtures';
 import { UI_ROUTES } from '@constants/endpoints';
 import { AccountServicesPage, AccountsOverviewPage, LoginPage, RegistrationPage } from '@/pages';
 import { TransactionAPI } from '@api/services';
-import { generateBillPaymentData, generateUserRegistrationData } from '@/test-data';
-import { generateRandomAmount } from '@/utils/data-utils';
+import {
+  generateBillPaymentData,
+  generateRandomAmount,
+  generateUserRegistrationData,
+} from '@/test-data';
 
 test('User completes end-to-end banking journey successfully', async ({
   page,
@@ -115,7 +118,11 @@ test('User completes end-to-end banking journey successfully', async ({
     );
 
     const amount = generateRandomAmount(100, 300);
-    testContext.setLastTransferAmount(amount);
+    testContext.setLastTransferFundsTransaction({
+      fromAccountId: Number(testContext.getPrimaryAccount()),
+      toAccountId: Number(testContext.getSecondaryAccount()),
+      amount,
+    });
 
     await transferFundsPage.transferFunds(
       testContext.getPrimaryAccount()!,

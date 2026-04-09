@@ -1,1 +1,8 @@
-export { generateUserRegistrationData, generateBillPaymentData } from './generators';
+export {
+  generateUserRegistrationData,
+  generateBillPaymentData,
+  generateRandomAmount,
+  generateAddress,
+  generatePhoneNumber,
+  generateUniqueId,
+} from './generators';
